@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tom's Work Dashboard</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0f0f13;
+      color: #e4e4e7;
+      min-height: 100vh;
+    }
+
+    .header {
+      padding: 24px 32px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #1e1e2a;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .header .meta {
+      font-size: 13px;
+      color: #71717a;
+    }
+
+    .header .meta .dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      margin-right: 6px;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+      padding: 24px 32px;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid #27272a;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card-header h2 {
+      font-size: 15px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .card-header .icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+
+    .badge {
+      background: #3b82f6;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 2px 10px;
+      border-radius: 999px;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    .badge.urgent { background: #ef4444; }
+    .badge.warning { background: #f59e0b; }
+    .badge.success { background: #22c55e; }
+    .badge.muted { background: #3f3f46; color: #a1a1aa; }
+
+    .card-body {
+      padding: 16px 20px;
+    }
+
+    .card-body.empty {
+      color: #71717a;
+      font-size: 14px;
+      text-align: center;
+      padding: 32px 20px;
+    }
+
+    /* Task list */
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #1e1e2a;
+    }
+
+    .task-item:last-child { border-bottom: none; }
+
+    .task-status {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 5px;
+      flex-shrink: 0;
+    }
+
+    .task-info { flex: 1; min-width: 0; }
+
+    .task-name {
+      font-size: 14px;
+      font-weight: 500;
+      color: #e4e4e7;
+      text-decoration: none;
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .task-name:hover { color: #3b82f6; }
+
+    .task-meta {
+      font-size: 12px;
+      color: #71717a;
+      margin-top: 2px;
+    }
+
+    .task-priority {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    /* Stat row */
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 0;
+      border-bottom: 1px solid #1e1e2a;
+    }
+
+    .stat-row:last-child { border-bottom: none; }
+
+    .stat-label {
+      font-size: 14px;
+      color: #a1a1aa;
+    }
+
+    .stat-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Event list */
+    .event-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #1e1e2a;
+    }
+
+    .event-item:last-child { border-bottom: none; }
+
+    .event-time {
+      font-size: 13px;
+      font-weight: 600;
+      color: #3b82f6;
+      min-width: 60px;
+      flex-shrink: 0;
+    }
+
+    .event-name {
+      font-size: 14px;
+      color: #e4e4e7;
+      text-decoration: none;
+    }
+
+    .event-name:hover { color: #3b82f6; }
+
+    .event-response {
+      font-size: 11px;
+      padding: 2px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .event-response.accepted { background: #16382d; color: #22c55e; }
+    .event-response.tentative { background: #382d16; color: #f59e0b; }
+    .event-response.needsAction { background: #38161c; color: #ef4444; }
+    .event-response.declined { background: #27272a; color: #71717a; }
+
+    /* Invite item */
+    .invite-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid #1e1e2a;
+    }
+
+    .invite-item:last-child { border-bottom: none; }
+
+    .invite-info { flex: 1; min-width: 0; }
+
+    .invite-name {
+      font-size: 14px;
+      color: #e4e4e7;
+      text-decoration: none;
+      display: block;
+    }
+
+    .invite-name:hover { color: #3b82f6; }
+
+    .invite-meta {
+      font-size: 12px;
+      color: #71717a;
+      margin-top: 2px;
+    }
+
+    .loading {
+      color: #71717a;
+      font-size: 13px;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .error-msg {
+      color: #f59e0b;
+      font-size: 13px;
+      padding: 16px;
+      text-align: center;
+      background: #1c1917;
+      border-radius: 8px;
+      margin: 8px;
+    }
+
+    /* Stats cards at top */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      padding: 24px 32px 0;
+      max-width: 1600px;
+      margin: 0 auto;
+    }
+
+    .stat-card {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stat-card .stat-value {
+      font-size: 36px;
+      font-weight: 700;
+    }
+
+    .stat-card .stat-label {
+      font-size: 13px;
+      margin-top: 4px;
+    }
+
+    .stat-card .stat-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; padding: 16px; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); padding: 16px; }
+      .header { padding: 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Tom's Work Dashboard</h1>
+    <div class="meta">
+      <span class="dot"></span>
+      Auto-refreshing &middot; <span id="last-updated">Loading...</span>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon">&#9745;</div>
+      <div class="stat-value" id="stat-tasks">-</div>
+      <div class="stat-label">ClickUp Tasks</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">&#128276;</div>
+      <div class="stat-value" id="stat-notifications">-</div>
+      <div class="stat-label">ClickUp Notifications</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">&#128172;</div>
+      <div class="stat-value" id="stat-slack">-</div>
+      <div class="stat-label">Slack To-Dos</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">&#128231;</div>
+      <div class="stat-value" id="stat-email">-</div>
+      <div class="stat-label">Unread Emails</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">&#128197;</div>
+      <div class="stat-value" id="stat-events">-</div>
+      <div class="stat-label">Events Today</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">&#10067;</div>
+      <div class="stat-value" id="stat-invites">-</div>
+      <div class="stat-label">Pending Invites</div>
+    </div>
+  </div>
+
+  <!-- Detail Cards -->
+  <div class="grid">
+    <!-- ClickUp Tasks -->
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="icon" style="background: #7b68ee; color: #fff;">C</span> Top ClickUp Tasks</h2>
+        <span class="badge" id="clickup-badge">0</span>
+      </div>
+      <div class="card-body" id="clickup-tasks">
+        <div class="loading">Loading tasks...</div>
+      </div>
+    </div>
+
+    <!-- Slack To-Dos -->
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="icon" style="background: #e01e5a; color: #fff;">S</span> Slack Reminders / To-Dos</h2>
+        <span class="badge" id="slack-badge">0</span>
+      </div>
+      <div class="card-body" id="slack-todos">
+        <div class="loading">Loading Slack data...</div>
+      </div>
+    </div>
+
+    <!-- Email -->
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="icon" style="background: #ea4335; color: #fff;">G</span> Gmail</h2>
+        <span class="badge" id="email-badge">0</span>
+      </div>
+      <div class="card-body" id="email-stats">
+        <div class="loading">Loading email data...</div>
+      </div>
+    </div>
+
+    <!-- Calendar Today -->
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="icon" style="background: #4285f4; color: #fff;">C</span> Today's Events</h2>
+        <span class="badge" id="calendar-badge">0</span>
+      </div>
+      <div class="card-body" id="calendar-events">
+        <div class="loading">Loading calendar...</div>
+      </div>
+    </div>
+
+    <!-- Pending Invites -->
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="icon" style="background: #f59e0b; color: #fff;">!</span> Pending Invites (24h)</h2>
+        <span class="badge warning" id="invites-badge">0</span>
+      </div>
+      <div class="card-body" id="pending-invites">
+        <div class="loading">Loading invites...</div>
+      </div>
+    </div>
+
+    <!-- Follow-ups -->
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="icon" style="background: #22c55e; color: #fff;">F</span> Email Follow-Ups</h2>
+        <span class="badge" id="followup-badge">0</span>
+      </div>
+      <div class="card-body" id="email-followups">
+        <div class="loading">Loading follow-ups...</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const REFRESH_INTERVAL = 60000; // 60 seconds
+
+    function formatTime(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function formatDate(ts) {
+      if (!ts) return '';
+      const d = new Date(parseInt(ts));
+      const now = new Date();
+      const diff = d - now;
+      const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+      if (days < 0) return `${Math.abs(days)}d overdue`;
+      if (days === 0) return 'Today';
+      if (days === 1) return 'Tomorrow';
+      return `In ${days}d`;
+    }
+
+    function priorityStyle(priority) {
+      const colors = {
+        urgent: { bg: '#3b1219', color: '#ef4444' },
+        high: { bg: '#3b2712', color: '#f59e0b' },
+        normal: { bg: '#122e3b', color: '#3b82f6' },
+        low: { bg: '#1a2e1a', color: '#71717a' },
+      };
+      return colors[priority] || colors.normal;
+    }
+
+    async function fetchJSON(url) {
+      try {
+        const resp = await fetch(url);
+        return await resp.json();
+      } catch (err) {
+        return { error: err.message };
+      }
+    }
+
+    async function refreshClickUp() {
+      const [taskData, notifData] = await Promise.all([
+        fetchJSON('/api/clickup/tasks'),
+        fetchJSON('/api/clickup/notifications'),
+      ]);
+
+      // Tasks
+      const container = document.getElementById('clickup-tasks');
+      if (taskData.error) {
+        container.innerHTML = `<div class="error-msg">&#9888; ${taskData.error}</div>`;
+      } else if (!taskData.tasks || taskData.tasks.length === 0) {
+        container.innerHTML = '<div class="card-body empty">No open tasks assigned to you</div>';
+      } else {
+        container.innerHTML = taskData.tasks.map(t => {
+          const pStyle = priorityStyle(t.priority);
+          const dueText = t.dueDate ? formatDate(t.dueDate) : '';
+          return `
+            <div class="task-item">
+              <div class="task-status" style="background: ${t.statusColor || '#3b82f6'}"></div>
+              <div class="task-info">
+                <a class="task-name" href="${t.url}" target="_blank">${t.name}</a>
+                <div class="task-meta">${t.folder || ''} ${t.list ? '&rarr; ' + t.list : ''} ${dueText ? '&middot; ' + dueText : ''}</div>
+              </div>
+              ${t.priority ? `<div class="task-priority" style="background: ${pStyle.bg}; color: ${pStyle.color}">${t.priority}</div>` : ''}
+            </div>
+          `;
+        }).join('');
+        document.getElementById('clickup-badge').textContent = taskData.tasks.length;
+        document.getElementById('stat-tasks').textContent = taskData.tasks.length;
+      }
+
+      // Notifications
+      if (!notifData.error) {
+        document.getElementById('stat-notifications').textContent = notifData.unread || 0;
+        const badge = document.getElementById('clickup-badge');
+        if (notifData.unread > 0) {
+          badge.classList.add('urgent');
+        }
+      }
+    }
+
+    async function refreshSlack() {
+      const data = await fetchJSON('/api/slack/todos');
+      const container = document.getElementById('slack-todos');
+
+      if (data.error) {
+        container.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
+      } else if (!data.items || data.items.length === 0) {
+        container.innerHTML = '<div class="card-body empty">No pending reminders</div>';
+      } else {
+        container.innerHTML = data.items.map(item => `
+          <div class="stat-row">
+            <div class="stat-label">${item.text}</div>
+            <div style="font-size: 12px; color: #71717a">${item.time ? new Date(item.time * 1000).toLocaleString() : ''}</div>
+          </div>
+        `).join('');
+      }
+
+      document.getElementById('slack-badge').textContent = data.count || 0;
+      document.getElementById('stat-slack').textContent = data.count || 0;
+    }
+
+    async function refreshEmail() {
+      const data = await fetchJSON('/api/gmail/unread');
+      const statsContainer = document.getElementById('email-stats');
+      const followupContainer = document.getElementById('email-followups');
+
+      if (data.error) {
+        statsContainer.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
+        followupContainer.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
+      } else {
+        statsContainer.innerHTML = `
+          <div class="stat-row">
+            <div class="stat-label">Unread in Inbox</div>
+            <div class="stat-value">${data.unread || 0}</div>
+          </div>
+        `;
+        followupContainer.innerHTML = `
+          <div class="stat-row">
+            <div class="stat-label">Starred / Follow-up items</div>
+            <div class="stat-value">${data.followUps || 0}</div>
+          </div>
+        `;
+        document.getElementById('email-badge').textContent = data.unread || 0;
+        document.getElementById('followup-badge').textContent = data.followUps || 0;
+        document.getElementById('stat-email').textContent = data.unread || 0;
+
+        if (data.unread > 10) {
+          document.getElementById('email-badge').classList.add('urgent');
+        }
+      }
+    }
+
+    async function refreshCalendar() {
+      const data = await fetchJSON('/api/calendar/today');
+      const eventsContainer = document.getElementById('calendar-events');
+      const invitesContainer = document.getElementById('pending-invites');
+
+      if (data.error) {
+        eventsContainer.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
+        invitesContainer.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
+      } else {
+        // Events
+        if (!data.events || data.events.length === 0) {
+          eventsContainer.innerHTML = '<div class="card-body empty">No events today</div>';
+        } else {
+          eventsContainer.innerHTML = data.events.map(e => {
+            const timeStr = e.isAllDay ? 'All day' : formatTime(e.start);
+            const responseClass = e.responseStatus || 'accepted';
+            return `
+              <div class="event-item">
+                <div class="event-time">${timeStr}</div>
+                <div style="flex:1;min-width:0">
+                  <a class="event-name" href="${e.htmlLink}" target="_blank">${e.summary || 'No title'}</a>
+                </div>
+                ${e.responseStatus ? `<span class="event-response ${responseClass}">${responseClass}</span>` : ''}
+              </div>
+            `;
+          }).join('');
+        }
+
+        document.getElementById('calendar-badge').textContent = (data.events || []).length;
+        document.getElementById('stat-events').textContent = (data.events || []).length;
+
+        // Pending invites
+        if (!data.pendingInvites || data.pendingInvites.length === 0) {
+          invitesContainer.innerHTML = '<div class="card-body empty">No pending invites</div>';
+        } else {
+          invitesContainer.innerHTML = data.pendingInvites.map(e => `
+            <div class="invite-item">
+              <div class="invite-info">
+                <a class="invite-name" href="${e.htmlLink}" target="_blank">${e.summary || 'No title'}</a>
+                <div class="invite-meta">${formatTime(e.start)} &middot; From: ${e.organizer || 'Unknown'}</div>
+              </div>
+            </div>
+          `).join('');
+        }
+
+        const invCount = (data.pendingInvites || []).length;
+        document.getElementById('invites-badge').textContent = invCount;
+        document.getElementById('stat-invites').textContent = invCount;
+        if (invCount > 0) {
+          document.getElementById('invites-badge').classList.add('warning');
+        }
+      }
+    }
+
+    async function refreshAll() {
+      await Promise.all([
+        refreshClickUp(),
+        refreshSlack(),
+        refreshEmail(),
+        refreshCalendar(),
+      ]);
+      document.getElementById('last-updated').textContent =
+        'Updated ' + new Date().toLocaleTimeString();
+    }
+
+    // Initial load
+    refreshAll();
+
+    // Auto-refresh
+    setInterval(refreshAll, REFRESH_INTERVAL);
+  </script>
+</body>
+</html>

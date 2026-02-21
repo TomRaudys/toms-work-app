@@ -1,0 +1,16 @@
+{
+  "name": "toms-work-app",
+  "version": "1.0.0",
+  "description": "Personal work dashboard",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "googleapis": "^144.0.0",
+    "dotenv": "^16.4.0",
+    "node-fetch": "^2.7.0"
+  }
+}
