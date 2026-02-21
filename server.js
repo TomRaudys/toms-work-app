@@ -146,21 +146,31 @@ app.get('/api/gmail/unread', async (req, res) => {
     const auth = getGoogleAuth();
     const gmail = google.gmail({ version: 'v1', auth });
 
-    // Get accurate unread count from INBOX label
-    const inboxLabel = await gmail.users.labels.get({
-      userId: 'me',
-      id: 'INBOX',
-    });
-    const unreadCount = inboxLabel.data.messagesUnread || 0;
+    // Try CATEGORY_PRIMARY first (matches what user sees in Primary tab)
+    // Fall back to INBOX if categories aren't enabled
+    const [inboxLabel, starredLabel] = await Promise.all([
+      gmail.users.labels.get({ userId: 'me', id: 'INBOX' }),
+      gmail.users.labels.get({ userId: 'me', id: 'STARRED' }),
+    ]);
 
-    // Get starred message count (follow-ups)
-    const starredLabel = await gmail.users.labels.get({
-      userId: 'me',
-      id: 'STARRED',
-    });
+    let primaryUnread;
+    try {
+      const primaryLabel = await gmail.users.labels.get({ userId: 'me', id: 'CATEGORY_PRIMARY' });
+      primaryUnread = primaryLabel.data.messagesUnread || 0;
+    } catch {
+      // Categories not enabled - use INBOX count directly
+      primaryUnread = null;
+    }
+
+    const inboxUnread = inboxLabel.data.messagesUnread || 0;
     const followUpCount = starredLabel.data.messagesTotal || 0;
 
-    res.json({ unread: unreadCount, followUps: followUpCount });
+    res.json({
+      unread: primaryUnread !== null ? primaryUnread : inboxUnread,
+      totalUnread: inboxUnread,
+      followUps: followUpCount,
+      hasCategoryTabs: primaryUnread !== null,
+    });
   } catch (err) {
     console.error('Gmail error:', err.message);
     res.json({ error: err.message });

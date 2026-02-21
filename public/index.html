@@ -15,7 +15,7 @@
     }
 
     .header {
-      padding: 24px 32px;
+      padding: 20px 32px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -23,7 +23,7 @@
     }
 
     .header h1 {
-      font-size: 22px;
+      font-size: 20px;
       font-weight: 600;
       color: #fff;
     }
@@ -48,6 +48,95 @@
       50% { opacity: 0.4; }
     }
 
+    /* Compact stats strip */
+    .stats-strip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 32px;
+      border-bottom: 1px solid #1e1e2a;
+      overflow-x: auto;
+      flex-wrap: wrap;
+    }
+
+    .stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 6px 14px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .stat-pill .pill-icon { font-size: 14px; }
+
+    .stat-pill .pill-value {
+      font-weight: 700;
+      color: #fff;
+      font-size: 15px;
+    }
+
+    .stat-pill .pill-label {
+      color: #71717a;
+      font-size: 12px;
+    }
+
+    .stat-pill.alert .pill-value { color: #ef4444; }
+    .stat-pill.warn .pill-value { color: #f59e0b; }
+
+    /* Timezone clocks */
+    .clocks-strip {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      padding: 0 32px;
+      border-bottom: 1px solid #1e1e2a;
+      overflow-x: auto;
+    }
+
+    .clock-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 18px;
+      border-right: 1px solid #1e1e2a;
+      min-width: 0;
+    }
+
+    .clock-item:last-child { border-right: none; }
+
+    .clock-city {
+      font-size: 11px;
+      font-weight: 600;
+      color: #71717a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      min-width: 32px;
+    }
+
+    .clock-time {
+      font-size: 18px;
+      font-weight: 600;
+      color: #fff;
+      font-variant-numeric: tabular-nums;
+      letter-spacing: -0.5px;
+    }
+
+    .clock-date {
+      font-size: 11px;
+      color: #52525b;
+    }
+
+    .clock-period {
+      font-size: 11px;
+      color: #71717a;
+      font-weight: 500;
+    }
+
+    /* Main grid */
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
@@ -65,7 +154,7 @@
     }
 
     .card-header {
-      padding: 16px 20px;
+      padding: 14px 20px;
       border-bottom: 1px solid #27272a;
       display: flex;
       justify-content: space-between;
@@ -73,7 +162,7 @@
     }
 
     .card-header h2 {
-      font-size: 15px;
+      font-size: 14px;
       font-weight: 600;
       display: flex;
       align-items: center;
@@ -93,11 +182,11 @@
     .badge {
       background: #3b82f6;
       color: #fff;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 600;
-      padding: 2px 10px;
+      padding: 2px 8px;
       border-radius: 999px;
-      min-width: 24px;
+      min-width: 22px;
       text-align: center;
     }
 
@@ -106,40 +195,38 @@
     .badge.success { background: #22c55e; }
     .badge.muted { background: #3f3f46; color: #a1a1aa; }
 
-    .card-body {
-      padding: 16px 20px;
-    }
+    .card-body { padding: 14px 20px; }
 
     .card-body.empty {
       color: #71717a;
-      font-size: 14px;
+      font-size: 13px;
       text-align: center;
-      padding: 32px 20px;
+      padding: 28px 20px;
     }
 
     /* Task list */
     .task-item {
       display: flex;
       align-items: flex-start;
-      gap: 12px;
-      padding: 10px 0;
+      gap: 10px;
+      padding: 8px 0;
       border-bottom: 1px solid #1e1e2a;
     }
 
     .task-item:last-child { border-bottom: none; }
 
     .task-status {
-      width: 10px;
-      height: 10px;
+      width: 8px;
+      height: 8px;
       border-radius: 50%;
-      margin-top: 5px;
+      margin-top: 6px;
       flex-shrink: 0;
     }
 
     .task-info { flex: 1; min-width: 0; }
 
     .task-name {
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       color: #e4e4e7;
       text-decoration: none;
@@ -152,13 +239,13 @@
     .task-name:hover { color: #3b82f6; }
 
     .task-meta {
-      font-size: 12px;
+      font-size: 11px;
       color: #71717a;
       margin-top: 2px;
     }
 
     .task-priority {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 600;
       padding: 2px 6px;
       border-radius: 4px;
@@ -166,24 +253,24 @@
       margin-top: 3px;
     }
 
-    /* Stat row */
+    /* Stat row inside cards */
     .stat-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 0;
+      padding: 10px 0;
       border-bottom: 1px solid #1e1e2a;
     }
 
     .stat-row:last-child { border-bottom: none; }
 
     .stat-label {
-      font-size: 14px;
+      font-size: 13px;
       color: #a1a1aa;
     }
 
     .stat-value {
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 700;
       color: #fff;
     }
@@ -192,23 +279,23 @@
     .event-item {
       display: flex;
       align-items: flex-start;
-      gap: 12px;
-      padding: 10px 0;
+      gap: 10px;
+      padding: 8px 0;
       border-bottom: 1px solid #1e1e2a;
     }
 
     .event-item:last-child { border-bottom: none; }
 
     .event-time {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: #3b82f6;
-      min-width: 60px;
+      min-width: 55px;
       flex-shrink: 0;
     }
 
     .event-name {
-      font-size: 14px;
+      font-size: 13px;
       color: #e4e4e7;
       text-decoration: none;
     }
@@ -216,7 +303,7 @@
     .event-name:hover { color: #3b82f6; }
 
     .event-response {
-      font-size: 11px;
+      font-size: 10px;
       padding: 2px 6px;
       border-radius: 4px;
       flex-shrink: 0;
@@ -233,16 +320,15 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 10px 0;
+      padding: 8px 0;
       border-bottom: 1px solid #1e1e2a;
     }
 
     .invite-item:last-child { border-bottom: none; }
-
     .invite-info { flex: 1; min-width: 0; }
 
     .invite-name {
-      font-size: 14px;
+      font-size: 13px;
       color: #e4e4e7;
       text-decoration: none;
       display: block;
@@ -251,7 +337,7 @@
     .invite-name:hover { color: #3b82f6; }
 
     .invite-meta {
-      font-size: 12px;
+      font-size: 11px;
       color: #71717a;
       margin-top: 2px;
     }
@@ -266,50 +352,19 @@
     .error-msg {
       color: #f59e0b;
       font-size: 13px;
-      padding: 16px;
+      padding: 12px;
       text-align: center;
       background: #1c1917;
       border-radius: 8px;
       margin: 8px;
     }
 
-    /* Stats cards at top */
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 16px;
-      padding: 24px 32px 0;
-      max-width: 1600px;
-      margin: 0 auto;
-    }
-
-    .stat-card {
-      background: #18181b;
-      border: 1px solid #27272a;
-      border-radius: 12px;
-      padding: 20px;
-      text-align: center;
-    }
-
-    .stat-card .stat-value {
-      font-size: 36px;
-      font-weight: 700;
-    }
-
-    .stat-card .stat-label {
-      font-size: 13px;
-      margin-top: 4px;
-    }
-
-    .stat-card .stat-icon {
-      font-size: 24px;
-      margin-bottom: 8px;
-    }
-
     @media (max-width: 768px) {
       .grid { grid-template-columns: 1fr; padding: 16px; }
-      .stats-row { grid-template-columns: repeat(2, 1fr); padding: 16px; }
       .header { padding: 16px; }
+      .stats-strip { padding: 10px 16px; }
+      .clocks-strip { padding: 0 16px; flex-wrap: wrap; }
+      .clock-item { padding: 8px 12px; }
     }
   </style>
 </head>
@@ -322,37 +377,45 @@
     </div>
   </div>
 
-  <!-- Quick Stats -->
-  <div class="stats-row">
-    <div class="stat-card">
-      <div class="stat-icon">&#9745;</div>
-      <div class="stat-value" id="stat-tasks">-</div>
-      <div class="stat-label">ClickUp Tasks</div>
+  <!-- Timezone Clocks -->
+  <div class="clocks-strip" id="clocks-strip"></div>
+
+  <!-- Compact Stats -->
+  <div class="stats-strip">
+    <div class="stat-pill">
+      <span class="pill-icon">&#9745;</span>
+      <span class="pill-value" id="stat-tasks">-</span>
+      <span class="pill-label">tasks</span>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">&#128276;</div>
-      <div class="stat-value" id="stat-notifications">-</div>
-      <div class="stat-label">ClickUp Notifications</div>
+    <div class="stat-pill">
+      <span class="pill-icon">&#128276;</span>
+      <span class="pill-value" id="stat-notifications">-</span>
+      <span class="pill-label">notifications</span>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">&#128172;</div>
-      <div class="stat-value" id="stat-slack">-</div>
-      <div class="stat-label">Slack Saved</div>
+    <div class="stat-pill">
+      <span class="pill-icon">&#128172;</span>
+      <span class="pill-value" id="stat-slack">-</span>
+      <span class="pill-label">saved</span>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">&#128231;</div>
-      <div class="stat-value" id="stat-email">-</div>
-      <div class="stat-label">Unread Emails</div>
+    <div class="stat-pill">
+      <span class="pill-icon">&#128231;</span>
+      <span class="pill-value" id="stat-email">-</span>
+      <span class="pill-label">emails</span>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">&#128197;</div>
-      <div class="stat-value" id="stat-events">-</div>
-      <div class="stat-label">Events Today</div>
+    <div class="stat-pill">
+      <span class="pill-icon">&#11088;</span>
+      <span class="pill-value" id="stat-followups">-</span>
+      <span class="pill-label">follow-ups</span>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon">&#10067;</div>
-      <div class="stat-value" id="stat-invites">-</div>
-      <div class="stat-label">Pending Invites</div>
+    <div class="stat-pill">
+      <span class="pill-icon">&#128197;</span>
+      <span class="pill-value" id="stat-events">-</span>
+      <span class="pill-label">events</span>
+    </div>
+    <div class="stat-pill">
+      <span class="pill-icon">&#10067;</span>
+      <span class="pill-value" id="stat-invites">-</span>
+      <span class="pill-label">invites</span>
     </div>
   </div>
 
@@ -369,29 +432,7 @@
       </div>
     </div>
 
-    <!-- Slack To-Dos -->
-    <div class="card">
-      <div class="card-header">
-        <h2><span class="icon" style="background: #e01e5a; color: #fff;">S</span> Slack Saved for Later</h2>
-        <span class="badge" id="slack-badge">0</span>
-      </div>
-      <div class="card-body" id="slack-todos">
-        <div class="loading">Loading Slack data...</div>
-      </div>
-    </div>
-
-    <!-- Email -->
-    <div class="card">
-      <div class="card-header">
-        <h2><span class="icon" style="background: #ea4335; color: #fff;">G</span> Gmail</h2>
-        <span class="badge" id="email-badge">0</span>
-      </div>
-      <div class="card-body" id="email-stats">
-        <div class="loading">Loading email data...</div>
-      </div>
-    </div>
-
-    <!-- Calendar Today -->
+    <!-- Today's Events -->
     <div class="card">
       <div class="card-header">
         <h2><span class="icon" style="background: #4285f4; color: #fff;">C</span> Today's Events</h2>
@@ -399,6 +440,17 @@
       </div>
       <div class="card-body" id="calendar-events">
         <div class="loading">Loading calendar...</div>
+      </div>
+    </div>
+
+    <!-- Slack Saved -->
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="icon" style="background: #e01e5a; color: #fff;">S</span> Slack Saved for Later</h2>
+        <span class="badge" id="slack-badge">0</span>
+      </div>
+      <div class="card-body" id="slack-todos">
+        <div class="loading">Loading Slack data...</div>
       </div>
     </div>
 
@@ -413,10 +465,21 @@
       </div>
     </div>
 
+    <!-- Gmail -->
+    <div class="card">
+      <div class="card-header">
+        <h2><span class="icon" style="background: #ea4335; color: #fff;">G</span> Gmail</h2>
+        <span class="badge" id="email-badge">0</span>
+      </div>
+      <div class="card-body" id="email-stats">
+        <div class="loading">Loading email data...</div>
+      </div>
+    </div>
+
     <!-- Follow-ups -->
     <div class="card">
       <div class="card-header">
-        <h2><span class="icon" style="background: #22c55e; color: #fff;">F</span> Email Follow-Ups</h2>
+        <h2><span class="icon" style="background: #22c55e; color: #fff;">&#11088;</span> Email Follow-Ups</h2>
         <span class="badge" id="followup-badge">0</span>
       </div>
       <div class="card-body" id="email-followups">
@@ -426,8 +489,46 @@
   </div>
 
   <script>
-    const REFRESH_INTERVAL = 60000; // 60 seconds
+    const REFRESH_INTERVAL = 60000;
 
+    // --- Timezone Clocks ---
+    const CLOCKS = [
+      { city: 'AMS', tz: 'Europe/Amsterdam', label: 'Amsterdam' },
+      { city: 'LON', tz: 'Europe/London', label: 'London' },
+      { city: 'NYC', tz: 'America/New_York', label: 'New York' },
+      { city: 'SFO', tz: 'America/Los_Angeles', label: 'San Francisco' },
+    ];
+
+    function updateClocks() {
+      const strip = document.getElementById('clocks-strip');
+      const now = new Date();
+      strip.innerHTML = CLOCKS.map(c => {
+        const opts = { timeZone: c.tz, hour: '2-digit', minute: '2-digit', hour12: true };
+        const dateOpts = { timeZone: c.tz, weekday: 'short', month: 'short', day: 'numeric' };
+        const timeStr = now.toLocaleTimeString('en-US', opts);
+        const timeParts = timeStr.split(' ');
+        const time = timeParts[0];
+        const period = timeParts[1] || '';
+        const dateStr = now.toLocaleDateString('en-US', dateOpts);
+        return `
+          <div class="clock-item">
+            <div>
+              <div class="clock-city">${c.city}</div>
+              <div class="clock-date">${dateStr}</div>
+            </div>
+            <div>
+              <span class="clock-time">${time}</span>
+              <span class="clock-period">${period}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    updateClocks();
+    setInterval(updateClocks, 1000);
+
+    // --- Helpers ---
     function formatTime(dateStr) {
       if (!dateStr) return '';
       const d = new Date(dateStr);
@@ -444,6 +545,19 @@
       if (days === 0) return 'Today';
       if (days === 1) return 'Tomorrow';
       return `In ${days}d`;
+    }
+
+    function formatSavedDate(ts) {
+      if (!ts) return '';
+      const d = new Date(ts * 1000);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+      if (diffDays === 0) return 'today';
+      if (diffDays === 1) return 'yesterday';
+      if (diffDays < 7) return `${diffDays}d ago`;
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+      return `${Math.floor(diffDays / 30)}mo ago`;
     }
 
     function priorityStyle(priority) {
@@ -465,13 +579,13 @@
       }
     }
 
+    // --- Data Refresh ---
     async function refreshClickUp() {
       const [taskData, notifData] = await Promise.all([
         fetchJSON('/api/clickup/tasks'),
         fetchJSON('/api/clickup/notifications'),
       ]);
 
-      // Tasks
       const container = document.getElementById('clickup-tasks');
       if (taskData.error) {
         container.innerHTML = `<div class="error-msg">&#9888; ${taskData.error}</div>`;
@@ -496,12 +610,11 @@
         document.getElementById('stat-tasks').textContent = taskData.tasks.length;
       }
 
-      // Notifications
       if (!notifData.error) {
-        document.getElementById('stat-notifications').textContent = notifData.unread || 0;
-        const badge = document.getElementById('clickup-badge');
-        if (notifData.unread > 0) {
-          badge.classList.add('urgent');
+        const n = notifData.unread || 0;
+        document.getElementById('stat-notifications').textContent = n;
+        if (n > 0) {
+          document.getElementById('stat-notifications').closest('.stat-pill').classList.add('alert');
         }
       }
     }
@@ -515,12 +628,20 @@
       } else if (!data.items || data.items.length === 0) {
         container.innerHTML = '<div class="card-body empty">No saved items</div>';
       } else {
-        container.innerHTML = data.items.map(item => `
-          <div class="stat-row">
-            <div class="stat-label" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.text}</div>
-            <div style="font-size: 11px; color: #71717a; flex-shrink:0; margin-left:8px">${item.type || ''}</div>
-          </div>
-        `).join('');
+        container.innerHTML = data.items.map(item => {
+          const typeIcon = item.type === 'im' ? '&#128172;' : item.type === 'channel' ? '#' : '&#128196;';
+          const typeLabel = item.type === 'im' ? 'DM' : item.type === 'channel' ? 'Channel' : item.type;
+          const savedWhen = formatSavedDate(item.date);
+          return `
+            <div class="stat-row">
+              <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+                <span style="font-size:13px;color:#52525b">${typeIcon}</span>
+                <span class="stat-label" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.text}</span>
+              </div>
+              <div style="font-size:11px;color:#52525b;flex-shrink:0;margin-left:8px">${savedWhen}</div>
+            </div>
+          `;
+        }).join('');
       }
 
       document.getElementById('slack-badge').textContent = data.count || 0;
@@ -536,9 +657,14 @@
         statsContainer.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
         followupContainer.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
       } else {
+        const extraInfo = data.hasCategoryTabs && data.totalUnread !== data.unread
+          ? `<div style="font-size:11px;color:#52525b;margin-top:4px">${data.totalUnread} total across all tabs</div>` : '';
         statsContainer.innerHTML = `
           <div class="stat-row">
-            <div class="stat-label">Unread in Inbox</div>
+            <div>
+              <div class="stat-label">Unread in Inbox</div>
+              ${extraInfo}
+            </div>
             <div class="stat-value">${data.unread || 0}</div>
           </div>
         `;
@@ -551,9 +677,11 @@
         document.getElementById('email-badge').textContent = data.unread || 0;
         document.getElementById('followup-badge').textContent = data.followUps || 0;
         document.getElementById('stat-email').textContent = data.unread || 0;
+        document.getElementById('stat-followups').textContent = data.followUps || 0;
 
         if (data.unread > 10) {
           document.getElementById('email-badge').classList.add('urgent');
+          document.getElementById('stat-email').closest('.stat-pill').classList.add('alert');
         }
       }
     }
@@ -567,7 +695,6 @@
         eventsContainer.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
         invitesContainer.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
       } else {
-        // Events
         if (!data.events || data.events.length === 0) {
           eventsContainer.innerHTML = '<div class="card-body empty">No events today</div>';
         } else {
@@ -589,7 +716,6 @@
         document.getElementById('calendar-badge').textContent = (data.events || []).length;
         document.getElementById('stat-events').textContent = (data.events || []).length;
 
-        // Pending invites
         if (!data.pendingInvites || data.pendingInvites.length === 0) {
           invitesContainer.innerHTML = '<div class="card-body empty">No pending invites</div>';
         } else {
@@ -608,6 +734,7 @@
         document.getElementById('stat-invites').textContent = invCount;
         if (invCount > 0) {
           document.getElementById('invites-badge').classList.add('warning');
+          document.getElementById('stat-invites').closest('.stat-pill').classList.add('warn');
         }
       }
     }
@@ -623,10 +750,7 @@
         'Updated ' + new Date().toLocaleTimeString();
     }
 
-    // Initial load
     refreshAll();
-
-    // Auto-refresh
     setInterval(refreshAll, REFRESH_INTERVAL);
   </script>
 </body>
