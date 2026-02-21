@@ -337,7 +337,7 @@
     <div class="stat-card">
       <div class="stat-icon">&#128172;</div>
       <div class="stat-value" id="stat-slack">-</div>
-      <div class="stat-label">Slack To-Dos</div>
+      <div class="stat-label">Slack Saved</div>
     </div>
     <div class="stat-card">
       <div class="stat-icon">&#128231;</div>
@@ -372,7 +372,7 @@
     <!-- Slack To-Dos -->
     <div class="card">
       <div class="card-header">
-        <h2><span class="icon" style="background: #e01e5a; color: #fff;">S</span> Slack Reminders / To-Dos</h2>
+        <h2><span class="icon" style="background: #e01e5a; color: #fff;">S</span> Slack Saved for Later</h2>
         <span class="badge" id="slack-badge">0</span>
       </div>
       <div class="card-body" id="slack-todos">
@@ -513,12 +513,12 @@
       if (data.error) {
         container.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
       } else if (!data.items || data.items.length === 0) {
-        container.innerHTML = '<div class="card-body empty">No pending reminders</div>';
+        container.innerHTML = '<div class="card-body empty">No saved items</div>';
       } else {
         container.innerHTML = data.items.map(item => `
           <div class="stat-row">
-            <div class="stat-label">${item.text}</div>
-            <div style="font-size: 12px; color: #71717a">${item.time ? new Date(item.time * 1000).toLocaleString() : ''}</div>
+            <div class="stat-label" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.text}</div>
+            <div style="font-size: 11px; color: #71717a; flex-shrink:0; margin-left:8px">${item.type || ''}</div>
           </div>
         `).join('');
       }

@@ -67,17 +67,35 @@ app.get('/api/slack/todos', async (req, res) => {
     const token = process.env.SLACK_USER_TOKEN;
     if (!token) return res.json({ error: 'No Slack token configured' });
 
-    // Search for saved/bookmarked items or "to do" items
-    // Slack doesn't have a direct "todo" API, so we search for reminders
-    const resp = await fetch('https://slack.com/api/reminders.list', {
-      headers: { Authorization: `Bearer ${token}` }
+    // Get "Saved for Later" items (starred items)
+    let allItems = [];
+    let cursor = '';
+    let totalCount = 0;
+
+    // Paginate to get accurate total count
+    do {
+      const url = `https://slack.com/api/stars.list?limit=100${cursor ? '&cursor=' + cursor : ''}`;
+      const resp = await fetch(url, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await resp.json();
+      if (!data.ok) {
+        return res.json({ error: data.error || 'Slack API error' });
+      }
+      const items = data.items || [];
+      allItems = allItems.concat(items);
+      totalCount = data.paging?.total || allItems.length;
+      cursor = data.response_metadata?.next_cursor || '';
+    } while (cursor && allItems.length < 20);
+
+    res.json({
+      count: totalCount,
+      items: allItems.slice(0, 10).map(item => ({
+        type: item.type,
+        text: item.message?.text?.substring(0, 120) || item.file?.name || item.channel || 'Saved item',
+        date: item.date_create,
+      }))
     });
-    const data = await resp.json();
-    const incomplete = (data.reminders || []).filter(r => !r.complete_ts);
-    res.json({ count: incomplete.length, items: incomplete.slice(0, 10).map(r => ({
-      text: r.text,
-      time: r.time,
-    })) });
   } catch (err) {
     console.error('Slack error:', err.message);
     res.json({ error: err.message });
@@ -128,25 +146,19 @@ app.get('/api/gmail/unread', async (req, res) => {
     const auth = getGoogleAuth();
     const gmail = google.gmail({ version: 'v1', auth });
 
-    // Get unread count
-    const profile = await gmail.users.getProfile({ userId: 'me' });
-
-    // Get unread messages
-    const unreadResp = await gmail.users.messages.list({
+    // Get accurate unread count from INBOX label
+    const inboxLabel = await gmail.users.labels.get({
       userId: 'me',
-      q: 'is:unread in:inbox',
-      maxResults: 5,
+      id: 'INBOX',
     });
+    const unreadCount = inboxLabel.data.messagesUnread || 0;
 
-    const unreadCount = unreadResp.data.resultSizeEstimate || 0;
-
-    // Get messages needing follow-up (starred or labeled)
-    const followUpResp = await gmail.users.messages.list({
+    // Get starred message count (follow-ups)
+    const starredLabel = await gmail.users.labels.get({
       userId: 'me',
-      q: 'label:follow-up OR (is:starred is:unread)',
-      maxResults: 10,
+      id: 'STARRED',
     });
-    const followUpCount = followUpResp.data.resultSizeEstimate || 0;
+    const followUpCount = starredLabel.data.messagesTotal || 0;
 
     res.json({ unread: unreadCount, followUps: followUpCount });
   } catch (err) {
