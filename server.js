@@ -10,7 +10,6 @@ const PORT = process.env.PORT || 3000;
 require('dotenv').config();
 
 app.use(express.static(path.join(__dirname, 'public')));
-
 // --- ClickUp ---
 app.get('/api/clickup/tasks', async (req, res) => {
   try {
@@ -64,35 +63,32 @@ app.get('/api/clickup/notifications', async (req, res) => {
 // --- Slack ---
 app.get('/api/slack/todos', async (req, res) => {
   try {
-    const token = process.env.SLACK_USER_TOKEN;
-    if (!token) return res.json({ error: 'No Slack token configured' });
+    const xoxcToken = process.env.SLACK_XOXC_TOKEN;
+    const dCookie = process.env.SLACK_D_COOKIE;
+    if (!xoxcToken || !dCookie) return res.json({ error: 'No Slack xoxc token or d cookie configured' });
 
-    // Get "Saved for Later" items (starred items)
-    let allItems = [];
-    let cursor = '';
-    let totalCount = 0;
+    const resp = await fetch('https://app.slack.com/api/saved.list', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Cookie': `d=${dCookie}`,
+      },
+      body: `token=${encodeURIComponent(xoxcToken)}`,
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      return res.json({ error: data.error || 'Slack saved.list API error' });
+    }
 
-    // Paginate to get accurate total count
-    do {
-      const url = `https://slack.com/api/stars.list?limit=100${cursor ? '&cursor=' + cursor : ''}`;
-      const resp = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await resp.json();
-      if (!data.ok) {
-        return res.json({ error: data.error || 'Slack API error' });
-      }
-      const items = data.items || [];
-      allItems = allItems.concat(items);
-      totalCount = data.paging?.total || allItems.length;
-      cursor = data.response_metadata?.next_cursor || '';
-    } while (cursor && allItems.length < 20);
-
+    const counts = data.counts || {};
     res.json({
-      count: totalCount,
-      items: allItems.slice(0, 10).map(item => ({
+      count: counts.uncompleted_count || 0,
+      uncompleted: counts.uncompleted_count || 0,
+      completed: counts.completed_count || 0,
+      total: counts.total_count || 0,
+      items: (data.saved_items || []).slice(0, 10).map(item => ({
         type: item.type,
-        text: item.message?.text?.substring(0, 120) || item.file?.name || item.channel || 'Saved item',
+        text: item.message?.text?.substring(0, 120) || item.title || 'Saved item',
         date: item.date_create,
       }))
     });
@@ -146,30 +142,12 @@ app.get('/api/gmail/unread', async (req, res) => {
     const auth = getGoogleAuth();
     const gmail = google.gmail({ version: 'v1', auth });
 
-    // Try CATEGORY_PRIMARY first (matches what user sees in Primary tab)
-    // Fall back to INBOX if categories aren't enabled
-    const [inboxLabel, starredLabel] = await Promise.all([
-      gmail.users.labels.get({ userId: 'me', id: 'INBOX' }),
-      gmail.users.labels.get({ userId: 'me', id: 'STARRED' }),
-    ]);
-
-    let primaryUnread;
-    try {
-      const primaryLabel = await gmail.users.labels.get({ userId: 'me', id: 'CATEGORY_PRIMARY' });
-      primaryUnread = primaryLabel.data.messagesUnread || 0;
-    } catch {
-      // Categories not enabled - use INBOX count directly
-      primaryUnread = null;
-    }
-
-    const inboxUnread = inboxLabel.data.messagesUnread || 0;
-    const followUpCount = starredLabel.data.messagesTotal || 0;
+    // Use label stats for exact unread count (matches Gmail UI sidebar)
+    const inboxLabel = await gmail.users.labels.get({ userId: 'me', id: 'INBOX' });
+    const unreadThreads = inboxLabel.data.threadsUnread || 0;
 
     res.json({
-      unread: primaryUnread !== null ? primaryUnread : inboxUnread,
-      totalUnread: inboxUnread,
-      followUps: followUpCount,
-      hasCategoryTabs: primaryUnread !== null,
+      unread: unreadThreads,
     });
   } catch (err) {
     console.error('Gmail error:', err.message);
@@ -187,7 +165,7 @@ app.get('/api/calendar/today', async (req, res) => {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const endOf24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const endOf30d = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
 
     // Today's events
     const eventsResp = await calendar.events.list({
@@ -198,21 +176,60 @@ app.get('/api/calendar/today', async (req, res) => {
       orderBy: 'startTime',
     });
 
-    const events = (eventsResp.data.items || []).map(e => ({
-      summary: e.summary,
-      start: e.start?.dateTime || e.start?.date,
-      end: e.end?.dateTime || e.end?.date,
-      status: e.status,
-      responseStatus: e.attendees?.find(a => a.self)?.responseStatus,
-      htmlLink: e.htmlLink,
-      isAllDay: !e.start?.dateTime,
-    }));
+    const events = (eventsResp.data.items || []).map(e => {
+      const otherAttendees = (e.attendees || []).filter(a => !a.self);
+      const attendeeCounts = otherAttendees.length > 0 ? {
+        total: otherAttendees.length,
+        accepted: otherAttendees.filter(a => a.responseStatus === 'accepted').length,
+        declined: otherAttendees.filter(a => a.responseStatus === 'declined').length,
+        needsAction: otherAttendees.filter(a => a.responseStatus === 'needsAction').length,
+        tentative: otherAttendees.filter(a => a.responseStatus === 'tentative').length,
+      } : null;
+      // Determine event tag from eventType, organizer domain
+      let tag = null;
+      const eventType = e.eventType || 'default';
+      if (eventType === 'outOfOffice') {
+        tag = 'OOO';
+      } else if (eventType === 'focusTime') {
+        tag = 'Focus';
+      } else if (eventType === 'workingLocation') {
+        tag = 'Location';
+      } else {
+        // Check if external (organizer from different domain than user)
+        const orgEmail = e.organizer?.email || '';
+        const userDomain = 'flat2vr.com';
+        if (orgEmail && !orgEmail.includes('@calendar.google.com') && !orgEmail.endsWith('@' + userDomain)) {
+          tag = 'External';
+        }
+      }
 
-    // Pending invites in next 24 hours
+      // Meeting link: prefer hangoutLink, then conferenceData video entry
+      let meetingLink = e.hangoutLink || null;
+      if (!meetingLink && e.conferenceData?.entryPoints) {
+        const video = e.conferenceData.entryPoints.find(ep => ep.entryPointType === 'video');
+        if (video) meetingLink = video.uri;
+      }
+
+      return {
+        summary: e.summary,
+        start: e.start?.dateTime || e.start?.date,
+        end: e.end?.dateTime || e.end?.date,
+        status: e.status,
+        responseStatus: e.attendees?.find(a => a.self)?.responseStatus,
+        htmlLink: e.htmlLink,
+        meetingLink,
+        isAllDay: !e.start?.dateTime,
+        attendeeCounts,
+        tag,
+        eventType,
+      };
+    });
+
+    // Pending invites in next 7 days
     const upcomingResp = await calendar.events.list({
       calendarId: 'primary',
       timeMin: now.toISOString(),
-      timeMax: endOf24h.toISOString(),
+      timeMax: endOf30d.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
     });
@@ -228,9 +245,126 @@ app.get('/api/calendar/today', async (req, res) => {
       htmlLink: e.htmlLink,
     }));
 
-    res.json({ events, pendingInvites });
+    // Meeting stats: count and total time for accepted non-special events
+    let meetingCount = 0;
+    let meetingMinutes = 0;
+    for (const raw of (eventsResp.data.items || [])) {
+      const et = raw.eventType || 'default';
+      // Skip OOO, focus time, working location, all-day events
+      if (et === 'outOfOffice' || et === 'focusTime' || et === 'workingLocation') continue;
+      if (!raw.start?.dateTime) continue; // skip all-day
+      // Only count if user accepted (or is organizer with no attendees = self-event)
+      const myResponse = raw.attendees?.find(a => a.self);
+      const status = myResponse ? myResponse.responseStatus : 'accepted'; // no attendees = own event
+      if (status !== 'accepted') continue;
+      meetingCount++;
+      const start = new Date(raw.start.dateTime);
+      const end = new Date(raw.end.dateTime);
+      meetingMinutes += (end - start) / 60000;
+    }
+
+    // Weekly meeting stats: Monday to Sunday of current week
+    const day = now.getDay(); // 0=Sun, 1=Mon ...
+    const diffToMon = day === 0 ? -6 : 1 - day;
+    const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon);
+    const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    const weekResp = await calendar.events.list({
+      calendarId: 'primary',
+      timeMin: startOfWeek.toISOString(),
+      timeMax: endOfWeek.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+      maxResults: 250,
+    });
+
+    let weeklyMeetingMinutes = 0;
+    for (const raw of (weekResp.data.items || [])) {
+      const et = raw.eventType || 'default';
+      if (et === 'outOfOffice' || et === 'focusTime' || et === 'workingLocation') continue;
+      if (!raw.start?.dateTime) continue;
+      const myResponse = raw.attendees?.find(a => a.self);
+      const status = myResponse ? myResponse.responseStatus : 'accepted';
+      if (status !== 'accepted') continue;
+      const start = new Date(raw.start.dateTime);
+      const end = new Date(raw.end.dateTime);
+      weeklyMeetingMinutes += (end - start) / 60000;
+    }
+
+    res.json({ events, pendingInvites, meetingCount, meetingMinutes, weeklyMeetingMinutes });
   } catch (err) {
     console.error('Calendar error:', err.message);
+    res.json({ error: err.message });
+  }
+});
+
+// --- Upcoming Releases (Flat2VR Internal Calendar) ---
+app.get('/api/releases', async (req, res) => {
+  try {
+    if (!process.env.GOOGLE_CLIENT_ID || !process.env.FLAT2VR_CALENDAR_ID) {
+      return res.json({ error: 'No Google credentials or calendar ID configured' });
+    }
+    const auth = getGoogleAuth();
+    const calendar = google.calendar({ version: 'v3', auth });
+    const now = new Date();
+
+    const end30d = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const resp = await calendar.events.list({
+      calendarId: process.env.FLAT2VR_CALENDAR_ID,
+      timeMin: now.toISOString(),
+      timeMax: end30d.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+      maxResults: 50,
+    });
+
+    const releases = (resp.data.items || []).map(e => {
+      const isAllDay = !e.start?.dateTime;
+      // Clean up summary (remove synced prefixes like "🔄 ... :: ...")
+      let name = e.summary || 'Untitled';
+      if (name.includes(' :: ')) {
+        name = name.split(' :: ')[0].replace(/^🔄\s*/, '');
+      }
+      return {
+        name,
+        date: e.start?.dateTime || e.start?.date,
+        endDate: e.end?.dateTime || e.end?.date,
+        isAllDay,
+        htmlLink: e.htmlLink,
+      };
+    });
+
+    res.json({ releases });
+  } catch (err) {
+    console.error('Releases error:', err.message);
+    res.json({ error: err.message });
+  }
+});
+
+// --- ClickUp High Level (Big things list) ---
+app.get('/api/clickup/highlevel', async (req, res) => {
+  try {
+    const token = process.env.CLICKUP_API_TOKEN;
+    const listId = process.env.CLICKUP_HIGHLEVEL_LIST_ID;
+    if (!token || !listId) return res.json({ error: 'No ClickUp token or list ID configured' });
+
+    const resp = await fetch(
+      `https://api.clickup.com/api/v2/list/${listId}/task?include_closed=false&subtasks=true&order_by=due_date`,
+      { headers: { Authorization: token } }
+    );
+    const data = await resp.json();
+    const tasks = (data.tasks || []).map(t => ({
+      id: t.id,
+      name: t.name,
+      status: t.status?.status,
+      statusColor: t.status?.color,
+      url: t.url,
+      dueDate: t.due_date,
+      startDate: t.start_date,
+    }));
+    res.json({ tasks });
+  } catch (err) {
+    console.error('ClickUp high level error:', err.message);
     res.json({ error: err.message });
   }
 });

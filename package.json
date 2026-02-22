@@ -8,9 +8,10 @@
     "dev": "node server.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
+    "dotenv": "^16.4.0",
     "express": "^4.21.0",
     "googleapis": "^144.0.0",
-    "dotenv": "^16.4.0",
     "node-fetch": "^2.7.0"
   }
 }

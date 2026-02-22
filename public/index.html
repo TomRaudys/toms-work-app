@@ -8,29 +8,40 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f0f13;
-      color: #e4e4e7;
-      min-height: 100vh;
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      background: #dce8f5;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(131, 168, 220, 0.5) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(155, 190, 230, 0.4) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(140, 180, 225, 0.35) 0%, transparent 55%),
+        radial-gradient(ellipse at 90% 70%, rgba(170, 200, 240, 0.3) 0%, transparent 45%);
+      background-attachment: fixed;
+      color: #1d1d1f;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
     }
 
     .header {
-      padding: 20px 32px;
+      padding: 12px 32px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid #1e1e2a;
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.5);
     }
 
     .header h1 {
       font-size: 20px;
       font-weight: 600;
-      color: #fff;
+      color: #1d1d1f;
     }
 
     .header .meta {
       font-size: 13px;
-      color: #71717a;
+      color: #6e6e73;
     }
 
     .header .meta .dot {
@@ -38,7 +49,7 @@
       width: 8px;
       height: 8px;
       border-radius: 50%;
-      background: #22c55e;
+      background: #34c759;
       margin-right: 6px;
       animation: pulse 2s infinite;
     }
@@ -48,131 +59,221 @@
       50% { opacity: 0.4; }
     }
 
-    /* Compact stats strip */
-    .stats-strip {
+    /* Stat pills inside the stats card */
+    .stats-grid {
       display: flex;
-      align-items: center;
-      gap: 6px;
-      padding: 12px 32px;
-      border-bottom: 1px solid #1e1e2a;
-      overflow-x: auto;
       flex-wrap: wrap;
+      gap: 8px;
+      padding: 4px 0;
     }
 
     .stat-pill {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: #18181b;
-      border: 1px solid #27272a;
-      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.5);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 12px;
       padding: 6px 14px;
       font-size: 13px;
       white-space: nowrap;
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.5);
     }
 
     .stat-pill .pill-icon { font-size: 14px; }
 
     .stat-pill .pill-value {
       font-weight: 700;
-      color: #fff;
+      color: #1d1d1f;
       font-size: 15px;
     }
 
     .stat-pill .pill-label {
-      color: #71717a;
+      color: #6e6e73;
       font-size: 12px;
     }
 
-    .stat-pill.alert .pill-value { color: #ef4444; }
-    .stat-pill.warn .pill-value { color: #f59e0b; }
+    .stat-pill.alert .pill-value { color: #ff3b30; }
+    .stat-pill.warn .pill-value { color: #ff9500; }
 
-    /* Timezone clocks */
-    .clocks-strip {
+    /* Timezone clocks inside card - horizontal layout */
+    .clocks-grid {
       display: flex;
-      align-items: center;
       gap: 0;
-      padding: 0 32px;
-      border-bottom: 1px solid #1e1e2a;
-      overflow-x: auto;
     }
 
     .clock-item {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 10px 18px;
-      border-right: 1px solid #1e1e2a;
+      padding: 8px 14px;
+      border-right: 1px solid rgba(0, 0, 0, 0.06);
       min-width: 0;
+      flex: 1;
     }
 
     .clock-item:last-child { border-right: none; }
 
+    .clock-face {
+      width: 46px;
+      height: 46px;
+      flex-shrink: 0;
+    }
+
+    .clock-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .clock-city-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
     .clock-city {
-      font-size: 11px;
+      font-size: 13px;
       font-weight: 600;
-      color: #71717a;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      min-width: 32px;
+      color: #1d1d1f;
+    }
+
+    .clock-tz {
+      font-size: 11px;
+      color: #86868b;
+      font-weight: 500;
+    }
+
+    .clock-tod {
+      font-size: 16px;
+      margin-left: 2px;
+    }
+
+    .clock-digital {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+      margin-top: 2px;
     }
 
     .clock-time {
-      font-size: 18px;
+      font-size: 22px;
       font-weight: 600;
-      color: #fff;
+      color: #1d1d1f;
       font-variant-numeric: tabular-nums;
       letter-spacing: -0.5px;
     }
 
-    .clock-date {
-      font-size: 11px;
-      color: #52525b;
-    }
-
     .clock-period {
-      font-size: 11px;
-      color: #71717a;
+      font-size: 12px;
+      color: #6e6e73;
       font-weight: 500;
     }
 
-    /* Main grid */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-      gap: 20px;
-      padding: 24px 32px;
-      max-width: 1600px;
-      margin: 0 auto;
+    .clock-date {
+      font-size: 11px;
+      color: #86868b;
+      margin-top: 1px;
     }
 
-    .card {
-      background: #18181b;
-      border: 1px solid #27272a;
-      border-radius: 12px;
+    /* Main grid - 3 columns, fill viewport */
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      grid-template-rows: auto auto 1fr 1fr minmax(0, 20vh);
+      gap: 16px;
+      padding: 16px 32px;
+      max-width: 1600px;
+      margin: 0 auto;
+      height: calc(100vh - 65px);
       overflow: hidden;
     }
 
+    /* Grid placement */
+    .card-clocks     { grid-column: 2 / 4; grid-row: 1; }
+    .card-events     { grid-column: 1; grid-row: 1 / 5; }
+    .card-invites    { grid-column: 1; grid-row: 5; }
+    .card-summary    { grid-column: 2; grid-row: 2; }
+    .card-clickup    { grid-column: 2; grid-row: 3 / 6; }
+    .card-releases   { grid-column: 3; grid-row: 2; }
+    .card-highlevel  { grid-column: 3; grid-row: 3 / 6; }
+
+    /* Compact summary table */
+    .card-summary .card-body { padding: 6px 16px; overflow: hidden; }
+
+    .summary-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .summary-table td {
+      padding: 6px 4px;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .summary-label {
+      color: #6e6e73;
+      font-weight: 500;
+    }
+
+    .summary-value {
+      font-weight: 700;
+      color: #1d1d1f;
+      font-size: 15px;
+      text-align: right;
+      padding-right: 16px !important;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.45);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.6);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.04),
+        0 8px 24px rgba(0, 0, 0, 0.06),
+        inset 0 1px 0 rgba(255, 255, 255, 0.5);
+      position: relative;
+      transition: box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .card:hover {
+      box-shadow:
+        0 4px 12px rgba(0, 0, 0, 0.06),
+        0 12px 32px rgba(0, 0, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    }
+
     .card-header {
-      padding: 14px 20px;
-      border-bottom: 1px solid #27272a;
+      padding: 10px 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-shrink: 0;
     }
 
     .card-header h2 {
       font-size: 14px;
       font-weight: 600;
+      color: #1d1d1f;
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
     .card-header .icon {
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -180,7 +281,7 @@
     }
 
     .badge {
-      background: #3b82f6;
+      background: #007aff;
       color: #fff;
       font-size: 11px;
       font-weight: 600;
@@ -188,21 +289,38 @@
       border-radius: 999px;
       min-width: 22px;
       text-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
     }
 
-    .badge.urgent { background: #ef4444; }
-    .badge.warning { background: #f59e0b; }
-    .badge.success { background: #22c55e; }
-    .badge.muted { background: #3f3f46; color: #a1a1aa; }
+    .badge.urgent { background: #ff3b30; }
+    .badge.warning { background: #ff9500; }
+    .badge.success { background: #34c759; }
+    .badge.muted { background: rgba(0, 0, 0, 0.08); color: #6e6e73; }
 
-    .card-body { padding: 14px 20px; }
+    .card-body {
+      padding: 10px 16px;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+    }
+
+    .card-body::-webkit-scrollbar { width: 6px; }
+    .card-body::-webkit-scrollbar-track { background: transparent; }
+    .card-body::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 3px; }
+    .card-body::-webkit-scrollbar-thumb:hover { background: rgba(0, 0, 0, 0.25); }
 
     .card-body.empty {
-      color: #71717a;
+      color: #86868b;
       font-size: 13px;
       text-align: center;
       padding: 28px 20px;
     }
+
+    /* Scrollable class kept for backwards compat */
+    .card-body.scrollable { overflow-y: auto; }
 
     /* Task list */
     .task-item {
@@ -210,7 +328,7 @@
       align-items: flex-start;
       gap: 10px;
       padding: 8px 0;
-      border-bottom: 1px solid #1e1e2a;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
 
     .task-item:last-child { border-bottom: none; }
@@ -228,7 +346,7 @@
     .task-name {
       font-size: 13px;
       font-weight: 500;
-      color: #e4e4e7;
+      color: #1d1d1f;
       text-decoration: none;
       display: block;
       white-space: nowrap;
@@ -236,11 +354,11 @@
       text-overflow: ellipsis;
     }
 
-    .task-name:hover { color: #3b82f6; }
+    .task-name:hover { color: #007aff; }
 
     .task-meta {
       font-size: 11px;
-      color: #71717a;
+      color: #86868b;
       margin-top: 2px;
     }
 
@@ -248,7 +366,7 @@
       font-size: 10px;
       font-weight: 600;
       padding: 2px 6px;
-      border-radius: 4px;
+      border-radius: 6px;
       flex-shrink: 0;
       margin-top: 3px;
     }
@@ -259,20 +377,63 @@
       justify-content: space-between;
       align-items: center;
       padding: 10px 0;
-      border-bottom: 1px solid #1e1e2a;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
 
     .stat-row:last-child { border-bottom: none; }
 
     .stat-label {
       font-size: 13px;
-      color: #a1a1aa;
+      color: #6e6e73;
     }
 
     .stat-value {
       font-size: 24px;
       font-weight: 700;
-      color: #fff;
+      color: #1d1d1f;
+    }
+
+    /* Saved item with preview */
+    .saved-item {
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .saved-item:last-child { border-bottom: none; }
+
+    .saved-item-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+
+    .saved-item-type {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.06);
+      color: #6e6e73;
+      flex-shrink: 0;
+    }
+
+    .saved-item-date {
+      font-size: 11px;
+      color: #86868b;
+      flex-shrink: 0;
+      margin-left: auto;
+    }
+
+    .saved-item-preview {
+      font-size: 12px;
+      color: #3c3c43;
+      line-height: 1.4;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
     }
 
     /* Event list */
@@ -281,39 +442,65 @@
       align-items: flex-start;
       gap: 10px;
       padding: 8px 0;
-      border-bottom: 1px solid #1e1e2a;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
 
     .event-item:last-child { border-bottom: none; }
 
     .event-time {
-      font-size: 12px;
+      font-size: 13px;
       font-weight: 600;
-      color: #3b82f6;
+      color: #007aff;
       min-width: 55px;
       flex-shrink: 0;
+      line-height: 1.3;
+      padding-top: 0;
     }
 
     .event-name {
       font-size: 13px;
-      color: #e4e4e7;
+      color: #1d1d1f;
       text-decoration: none;
+      line-height: 1.3;
+      vertical-align: top;
     }
 
-    .event-name:hover { color: #3b82f6; }
+    .event-tag {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+
+    .event-tag.ooo { background: rgba(142, 142, 147, 0.15); color: #636366; }
+    .event-tag.focus { background: rgba(88, 86, 214, 0.15); color: #5856d6; }
+    .event-tag.external { background: rgba(255, 149, 0, 0.15); color: #c77c00; }
+    .event-tag.default-tag { background: rgba(0, 122, 255, 0.1); color: #0055d4; }
+
+    .event-duration {
+      font-size: 10px;
+      color: #86868b;
+      font-weight: 500;
+      margin-left: 4px;
+    }
+
+    .event-name:hover { color: #007aff; }
 
     .event-response {
       font-size: 10px;
       padding: 2px 6px;
-      border-radius: 4px;
+      border-radius: 6px;
       flex-shrink: 0;
       margin-top: 2px;
     }
 
-    .event-response.accepted { background: #16382d; color: #22c55e; }
-    .event-response.tentative { background: #382d16; color: #f59e0b; }
-    .event-response.needsAction { background: #38161c; color: #ef4444; }
-    .event-response.declined { background: #27272a; color: #71717a; }
+    .event-response.accepted { background: rgba(52, 199, 89, 0.15); color: #248a3d; }
+    .event-response.tentative { background: rgba(255, 149, 0, 0.15); color: #c77c00; }
+    .event-response.needsAction { background: rgba(255, 59, 48, 0.15); color: #d70015; }
+    .event-response.declined { background: rgba(0, 0, 0, 0.06); color: #86868b; }
 
     /* Invite item */
     .invite-item {
@@ -321,7 +508,7 @@
       justify-content: space-between;
       align-items: center;
       padding: 8px 0;
-      border-bottom: 1px solid #1e1e2a;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
 
     .invite-item:last-child { border-bottom: none; }
@@ -329,42 +516,151 @@
 
     .invite-name {
       font-size: 13px;
-      color: #e4e4e7;
+      color: #1d1d1f;
       text-decoration: none;
       display: block;
     }
 
-    .invite-name:hover { color: #3b82f6; }
+    .invite-name:hover { color: #007aff; }
 
     .invite-meta {
       font-size: 11px;
-      color: #71717a;
+      color: #86868b;
       margin-top: 2px;
     }
 
+    /* Release items */
+    .release-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .release-item:last-child { border-bottom: none; }
+
+    .release-date {
+      font-size: 11px;
+      font-weight: 600;
+      color: #007aff;
+      min-width: 70px;
+      flex-shrink: 0;
+      line-height: 1.4;
+    }
+
+    .release-name {
+      font-size: 13px;
+      color: #1d1d1f;
+      text-decoration: none;
+      line-height: 1.4;
+    }
+
+    .release-name:hover { color: #007aff; }
+
+    .release-countdown {
+      font-size: 10px;
+      color: #86868b;
+      font-weight: 500;
+      margin-left: auto;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
+    /* Timeline view for High Level */
+    .timeline-group {
+      margin-bottom: 10px;
+    }
+
+    .timeline-group:last-child { margin-bottom: 0; }
+
+    .timeline-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6e6e73;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 4px 0 4px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      margin-bottom: 4px;
+    }
+
+    .timeline-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.03);
+    }
+
+    .timeline-item:last-child { border-bottom: none; }
+
+    .timeline-bar {
+      width: 3px;
+      height: 18px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    .timeline-task-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1d1d1f;
+      text-decoration: none;
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .timeline-task-name:hover { color: #007aff; }
+
+    .timeline-date-hint {
+      font-size: 10px;
+      color: #86868b;
+      flex-shrink: 0;
+      white-space: nowrap;
+    }
+
     .loading {
-      color: #71717a;
+      color: #86868b;
       font-size: 13px;
       padding: 24px;
       text-align: center;
     }
 
     .error-msg {
-      color: #f59e0b;
+      color: #c77c00;
       font-size: 13px;
       padding: 12px;
       text-align: center;
-      background: #1c1917;
-      border-radius: 8px;
+      background: rgba(255, 149, 0, 0.1);
+      border-radius: 12px;
       margin: 8px;
+    }
+
+    @media (max-width: 1100px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto;
+      }
+      .card-clocks, .card-summary, .card-clickup, .card-invites,
+      .card-events, .card-releases, .card-highlevel {
+        grid-column: auto;
+        grid-row: auto;
+      }
     }
 
     @media (max-width: 768px) {
       .grid { grid-template-columns: 1fr; padding: 16px; }
       .header { padding: 16px; }
-      .stats-strip { padding: 10px 16px; }
-      .clocks-strip { padding: 0 16px; flex-wrap: wrap; }
       .clock-item { padding: 8px 12px; }
+      .card-clocks, .card-summary, .card-clickup, .card-invites,
+      .card-events, .card-releases, .card-highlevel {
+        grid-column: auto;
+        grid-row: auto;
+      }
     }
   </style>
 </head>
@@ -377,115 +673,105 @@
     </div>
   </div>
 
-  <!-- Timezone Clocks -->
-  <div class="clocks-strip" id="clocks-strip"></div>
-
-  <!-- Compact Stats -->
-  <div class="stats-strip">
-    <div class="stat-pill">
-      <span class="pill-icon">&#9745;</span>
-      <span class="pill-value" id="stat-tasks">-</span>
-      <span class="pill-label">tasks</span>
-    </div>
-    <div class="stat-pill">
-      <span class="pill-icon">&#128276;</span>
-      <span class="pill-value" id="stat-notifications">-</span>
-      <span class="pill-label">notifications</span>
-    </div>
-    <div class="stat-pill">
-      <span class="pill-icon">&#128172;</span>
-      <span class="pill-value" id="stat-slack">-</span>
-      <span class="pill-label">saved</span>
-    </div>
-    <div class="stat-pill">
-      <span class="pill-icon">&#128231;</span>
-      <span class="pill-value" id="stat-email">-</span>
-      <span class="pill-label">emails</span>
-    </div>
-    <div class="stat-pill">
-      <span class="pill-icon">&#11088;</span>
-      <span class="pill-value" id="stat-followups">-</span>
-      <span class="pill-label">follow-ups</span>
-    </div>
-    <div class="stat-pill">
-      <span class="pill-icon">&#128197;</span>
-      <span class="pill-value" id="stat-events">-</span>
-      <span class="pill-label">events</span>
-    </div>
-    <div class="stat-pill">
-      <span class="pill-icon">&#10067;</span>
-      <span class="pill-value" id="stat-invites">-</span>
-      <span class="pill-label">invites</span>
-    </div>
-  </div>
-
   <!-- Detail Cards -->
   <div class="grid">
-    <!-- ClickUp Tasks -->
-    <div class="card">
+    <!-- Column 1, Row 1: World Clocks -->
+    <div class="card card-clocks">
       <div class="card-header">
-        <h2><span class="icon" style="background: #7b68ee; color: #fff;">C</span> Top ClickUp Tasks</h2>
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🕐</span> World Clocks</h2>
+      </div>
+      <div class="card-body">
+        <div class="clocks-grid" id="clocks-strip"></div>
+      </div>
+    </div>
+
+    <!-- Column 2, Row 1: Summary Table -->
+    <div class="card card-summary">
+      <div class="card-header">
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">📊</span> Summary</h2>
+        <span id="week-info" style="font-size: 11px; color: #6e6e73; font-weight: 500;"></span>
+      </div>
+      <div class="card-body">
+        <table class="summary-table">
+          <tbody>
+            <tr>
+              <td class="summary-label">💬 Slack unreads</td>
+              <td class="summary-value" id="stat-slack-unreads">-</td>
+              <td class="summary-label">📧 Unread emails</td>
+              <td class="summary-value" id="stat-email">-</td>
+            </tr>
+            <tr>
+              <td class="summary-label">🔖 Slack saved</td>
+              <td class="summary-value" id="stat-slack-saved">-</td>
+              <td class="summary-label">📅 Meetings today</td>
+              <td class="summary-value" id="stat-meetings">-</td>
+            </tr>
+            <tr>
+              <td class="summary-label">⏱️ Meeting time today</td>
+              <td class="summary-value" id="stat-meeting-time">-</td>
+              <td class="summary-label">📊 Week meeting time</td>
+              <td class="summary-value" id="stat-weekly-meeting-time">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Column 2, Row 3-4: Upcoming Releases -->
+    <div class="card card-releases">
+      <div class="card-header">
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🚀</span> Upcoming Releases</h2>
+        <span class="badge" id="releases-badge">0</span>
+      </div>
+      <div class="card-body" id="releases-list">
+        <div class="loading">Loading releases...</div>
+      </div>
+    </div>
+
+    <!-- Column 2, Row 4-5: High Level -->
+    <div class="card card-highlevel">
+      <div class="card-header">
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🎯</span> High Level</h2>
+        <span class="badge" id="highlevel-badge">0</span>
+      </div>
+      <div class="card-body scrollable" id="highlevel-list">
+        <div class="loading">Loading high level items...</div>
+      </div>
+    </div>
+
+    <!-- Column 3, Row 1-2: ClickUp Tasks (tall) -->
+    <div class="card card-clickup">
+      <div class="card-header">
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);"><svg width="14" height="14" viewBox="0 0 128 128" fill="none"><path d="M24.7 95.3l19-17.5c5.1 5.8 10.7 8.6 20.3 8.6 9.6 0 15.4-3 20.5-8.9l19 17.3C94 106.1 82 112.7 64 112.7c-18.2 0-30-6.5-39.3-17.4z" fill="#7B68EE"/><path d="M64 55.8l-22.4 20.7-19-17.5L64 21.3l41.5 37.7-19 17.5L64 55.8z" fill="#49CCF9"/></svg></span> ClickUp Inbox</h2>
         <span class="badge" id="clickup-badge">0</span>
       </div>
-      <div class="card-body" id="clickup-tasks">
+      <div class="card-body scrollable" id="clickup-tasks">
         <div class="loading">Loading tasks...</div>
       </div>
     </div>
 
-    <!-- Today's Events -->
-    <div class="card">
+    <!-- Column 1, Row 2: Pending Invites -->
+    <div class="card card-invites">
       <div class="card-header">
-        <h2><span class="icon" style="background: #4285f4; color: #fff;">C</span> Today's Events</h2>
-        <span class="badge" id="calendar-badge">0</span>
-      </div>
-      <div class="card-body" id="calendar-events">
-        <div class="loading">Loading calendar...</div>
-      </div>
-    </div>
-
-    <!-- Slack Saved -->
-    <div class="card">
-      <div class="card-header">
-        <h2><span class="icon" style="background: #e01e5a; color: #fff;">S</span> Slack Saved for Later</h2>
-        <span class="badge" id="slack-badge">0</span>
-      </div>
-      <div class="card-body" id="slack-todos">
-        <div class="loading">Loading Slack data...</div>
-      </div>
-    </div>
-
-    <!-- Pending Invites -->
-    <div class="card">
-      <div class="card-header">
-        <h2><span class="icon" style="background: #f59e0b; color: #fff;">!</span> Pending Invites (24h)</h2>
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">📩</span> Pending Invites (30 days)</h2>
         <span class="badge warning" id="invites-badge">0</span>
       </div>
-      <div class="card-body" id="pending-invites">
+      <div class="card-body scrollable" id="pending-invites">
         <div class="loading">Loading invites...</div>
       </div>
     </div>
 
-    <!-- Gmail -->
-    <div class="card">
+    <!-- Column 1, Row 3: Today's Events (tall) -->
+    <div class="card card-events">
       <div class="card-header">
-        <h2><span class="icon" style="background: #ea4335; color: #fff;">G</span> Gmail</h2>
-        <span class="badge" id="email-badge">0</span>
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🗓️</span> Today's Events</h2>
+        <span class="badge" id="calendar-badge">0</span>
       </div>
-      <div class="card-body" id="email-stats">
-        <div class="loading">Loading email data...</div>
+      <div class="card-body scrollable" id="calendar-events">
+        <div class="loading">Loading calendar...</div>
       </div>
     </div>
 
-    <!-- Follow-ups -->
-    <div class="card">
-      <div class="card-header">
-        <h2><span class="icon" style="background: #22c55e; color: #fff;">&#11088;</span> Email Follow-Ups</h2>
-        <span class="badge" id="followup-badge">0</span>
-      </div>
-      <div class="card-body" id="email-followups">
-        <div class="loading">Loading follow-ups...</div>
-      </div>
-    </div>
   </div>
 
   <script>
@@ -493,11 +779,43 @@
 
     // --- Timezone Clocks ---
     const CLOCKS = [
-      { city: 'AMS', tz: 'Europe/Amsterdam', label: 'Amsterdam' },
-      { city: 'LON', tz: 'Europe/London', label: 'London' },
-      { city: 'NYC', tz: 'America/New_York', label: 'New York' },
-      { city: 'SFO', tz: 'America/Los_Angeles', label: 'San Francisco' },
+      { city: 'Amsterdam', tz: 'Europe/Amsterdam', label: 'CET' },
+      { city: 'London', tz: 'Europe/London' },
+      { city: 'New York', tz: 'America/New_York' },
+      { city: 'San Francisco', tz: 'America/Los_Angeles' },
     ];
+
+    function getTimeOfDayEmoji(hour) {
+      if (hour >= 6 && hour < 12) return '\u{1F305}';   // sunrise/morning
+      if (hour >= 12 && hour < 17) return '\u{2600}\u{FE0F}';  // sun/afternoon
+      if (hour >= 17 && hour < 21) return '\u{1F307}';  // sunset/evening
+      return '\u{1F319}';                                // moon/night
+    }
+
+    function buildClockSVG(hours, minutes, seconds) {
+      const h = (hours % 12) + minutes / 60;
+      const m = minutes + seconds / 60;
+      const s = seconds;
+      const hourAngle = h * 30;
+      const minuteAngle = m * 6;
+      const secondAngle = s * 6;
+
+      return `<svg viewBox="0 0 100 100" class="clock-face">
+        <circle cx="50" cy="50" r="48" fill="rgba(255,255,255,0.7)" stroke="rgba(0,0,0,0.12)" stroke-width="1.5"/>
+        ${[0,1,2,3,4,5,6,7,8,9,10,11].map(i => {
+          const angle = i * 30 * Math.PI / 180;
+          const isMain = i % 3 === 0;
+          const r1 = isMain ? 38 : 40;
+          const r2 = 44;
+          const w = isMain ? 2 : 1;
+          return `<line x1="${50 + r1 * Math.sin(angle)}" y1="${50 - r1 * Math.cos(angle)}" x2="${50 + r2 * Math.sin(angle)}" y2="${50 - r2 * Math.cos(angle)}" stroke="rgba(0,0,0,0.3)" stroke-width="${w}" stroke-linecap="round"/>`;
+        }).join('')}
+        <line x1="50" y1="50" x2="${50 + 24 * Math.sin(hourAngle * Math.PI / 180)}" y2="${50 - 24 * Math.cos(hourAngle * Math.PI / 180)}" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/>
+        <line x1="50" y1="50" x2="${50 + 34 * Math.sin(minuteAngle * Math.PI / 180)}" y2="${50 - 34 * Math.cos(minuteAngle * Math.PI / 180)}" stroke="#1d1d1f" stroke-width="2" stroke-linecap="round"/>
+        <line x1="50" y1="50" x2="${50 + 36 * Math.sin(secondAngle * Math.PI / 180)}" y2="${50 - 36 * Math.cos(secondAngle * Math.PI / 180)}" stroke="#ff3b30" stroke-width="0.8" stroke-linecap="round"/>
+        <circle cx="50" cy="50" r="2.5" fill="#1d1d1f"/>
+      </svg>`;
+    }
 
     function updateClocks() {
       const strip = document.getElementById('clocks-strip');
@@ -510,15 +828,31 @@
         const time = timeParts[0];
         const period = timeParts[1] || '';
         const dateStr = now.toLocaleDateString('en-US', dateOpts);
+        // Use custom label for Amsterdam (CET), auto-detect for others
+        const tzAbbr = c.label ? 'CET' : now.toLocaleString('en-US', { timeZone: c.tz, timeZoneName: 'short' }).split(' ').pop();
+        const tzFull = c.label || '';
+
+        // Get numeric h/m/s for analog clock
+        const localParts = now.toLocaleString('en-US', { timeZone: c.tz, hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false }).split(':');
+        const h = parseInt(localParts[0]) || 0;
+        const m = parseInt(localParts[1]) || 0;
+        const s = parseInt(localParts[2]) || 0;
+        const emoji = getTimeOfDayEmoji(h);
+
         return `
           <div class="clock-item">
-            <div>
-              <div class="clock-city">${c.city}</div>
+            ${buildClockSVG(h, m, s)}
+            <div class="clock-info">
+              <div class="clock-city-row">
+                <span class="clock-city">${c.city}</span>
+                <span class="clock-tz">${tzFull ? tzFull : '(' + tzAbbr + ')'}</span>
+                <span class="clock-tod">${emoji}</span>
+              </div>
+              <div class="clock-digital">
+                <span class="clock-time">${time}</span>
+                <span class="clock-period">${period}</span>
+              </div>
               <div class="clock-date">${dateStr}</div>
-            </div>
-            <div>
-              <span class="clock-time">${time}</span>
-              <span class="clock-period">${period}</span>
             </div>
           </div>
         `;
@@ -562,10 +896,10 @@
 
     function priorityStyle(priority) {
       const colors = {
-        urgent: { bg: '#3b1219', color: '#ef4444' },
-        high: { bg: '#3b2712', color: '#f59e0b' },
-        normal: { bg: '#122e3b', color: '#3b82f6' },
-        low: { bg: '#1a2e1a', color: '#71717a' },
+        urgent: { bg: 'rgba(255,59,48,0.12)', color: '#d70015' },
+        high: { bg: 'rgba(255,149,0,0.12)', color: '#c77c00' },
+        normal: { bg: 'rgba(0,122,255,0.12)', color: '#0055d4' },
+        low: { bg: 'rgba(0,0,0,0.05)', color: '#86868b' },
       };
       return colors[priority] || colors.normal;
     }
@@ -607,81 +941,36 @@
           `;
         }).join('');
         document.getElementById('clickup-badge').textContent = taskData.tasks.length;
-        document.getElementById('stat-tasks').textContent = taskData.tasks.length;
       }
 
-      if (!notifData.error) {
-        const n = notifData.unread || 0;
-        document.getElementById('stat-notifications').textContent = n;
-        if (n > 0) {
-          document.getElementById('stat-notifications').closest('.stat-pill').classList.add('alert');
-        }
-      }
+      // Notification data (no longer displayed in summary, but kept for badge)
+
     }
 
     async function refreshSlack() {
-      const data = await fetchJSON('/api/slack/todos');
-      const container = document.getElementById('slack-todos');
+      const [savedData, unreadData] = await Promise.all([
+        fetchJSON('/api/slack/todos'),
+        fetchJSON('/api/slack/unread'),
+      ]);
 
-      if (data.error) {
-        container.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
-      } else if (!data.items || data.items.length === 0) {
-        container.innerHTML = '<div class="card-body empty">No saved items</div>';
-      } else {
-        container.innerHTML = data.items.map(item => {
-          const typeIcon = item.type === 'im' ? '&#128172;' : item.type === 'channel' ? '#' : '&#128196;';
-          const typeLabel = item.type === 'im' ? 'DM' : item.type === 'channel' ? 'Channel' : item.type;
-          const savedWhen = formatSavedDate(item.date);
-          return `
-            <div class="stat-row">
-              <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-                <span style="font-size:13px;color:#52525b">${typeIcon}</span>
-                <span class="stat-label" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${item.text}</span>
-              </div>
-              <div style="font-size:11px;color:#52525b;flex-shrink:0;margin-left:8px">${savedWhen}</div>
-            </div>
-          `;
-        }).join('');
+      // Slack saved count for summary table
+      if (!savedData.error) {
+        document.getElementById('stat-slack-saved').textContent = savedData.count || 0;
       }
 
-      document.getElementById('slack-badge').textContent = data.count || 0;
-      document.getElementById('stat-slack').textContent = data.count || 0;
+      // Slack unreads for summary table
+      if (!unreadData.error) {
+        document.getElementById('stat-slack-unreads').textContent = unreadData.total || 0;
+      }
     }
 
     async function refreshEmail() {
       const data = await fetchJSON('/api/gmail/unread');
-      const statsContainer = document.getElementById('email-stats');
-      const followupContainer = document.getElementById('email-followups');
-
-      if (data.error) {
-        statsContainer.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
-        followupContainer.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
-      } else {
-        const extraInfo = data.hasCategoryTabs && data.totalUnread !== data.unread
-          ? `<div style="font-size:11px;color:#52525b;margin-top:4px">${data.totalUnread} total across all tabs</div>` : '';
-        statsContainer.innerHTML = `
-          <div class="stat-row">
-            <div>
-              <div class="stat-label">Unread in Inbox</div>
-              ${extraInfo}
-            </div>
-            <div class="stat-value">${data.unread || 0}</div>
-          </div>
-        `;
-        followupContainer.innerHTML = `
-          <div class="stat-row">
-            <div class="stat-label">Starred / Follow-up items</div>
-            <div class="stat-value">${data.followUps || 0}</div>
-          </div>
-        `;
-        document.getElementById('email-badge').textContent = data.unread || 0;
-        document.getElementById('followup-badge').textContent = data.followUps || 0;
-        document.getElementById('stat-email').textContent = data.unread || 0;
-        document.getElementById('stat-followups').textContent = data.followUps || 0;
-
+      if (!data.error) {
+        const el = document.getElementById('stat-email');
+        el.textContent = data.unread || 0;
         if (data.unread > 10) {
-          document.getElementById('email-badge').classList.add('urgent');
-          document.getElementById('stat-email').closest('.stat-pill').classList.add('alert');
+          el.style.color = '#ff3b30';
         }
       }
     }
@@ -701,11 +990,46 @@
           eventsContainer.innerHTML = data.events.map(e => {
             const timeStr = e.isAllDay ? 'All day' : formatTime(e.start);
             const responseClass = e.responseStatus || 'accepted';
+            // Calculate duration
+            let durationHtml = '';
+            if (!e.isAllDay && e.start && e.end) {
+              const mins = Math.round((new Date(e.end) - new Date(e.start)) / 60000);
+              if (mins >= 60) {
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                durationHtml = `<span class="event-duration">${h}h${m > 0 ? m + 'm' : ''}</span>`;
+              } else {
+                durationHtml = `<span class="event-duration">${mins}min</span>`;
+              }
+            }
+            let attendeeHtml = '';
+            if (e.attendeeCounts) {
+              const ac = e.attendeeCounts;
+              if (ac.accepted === ac.total) {
+                attendeeHtml = `<div style="font-size:10px;color:#22c55e;margin-top:2px">All ${ac.total} accepted</div>`;
+              } else {
+                const parts = [];
+                if (ac.declined > 0) parts.push(`<span style="color:#ef4444">${ac.declined} declined</span>`);
+                if (ac.needsAction > 0) parts.push(`<span style="color:#f59e0b">${ac.needsAction} pending</span>`);
+                if (ac.tentative > 0) parts.push(`<span style="color:#a78bfa">${ac.tentative} tentative</span>`);
+                if (ac.accepted > 0) parts.push(`<span style="color:#22c55e">${ac.accepted} accepted</span>`);
+                attendeeHtml = `<div style="font-size:10px;margin-top:2px">${parts.join(' &middot; ')}</div>`;
+              }
+            }
+            // Event tag (type-based)
+            let tagHtml = '';
+            if (e.tag) {
+              const tagClass = e.tag === 'OOO' ? 'ooo' : e.tag === 'Focus' ? 'focus' : e.tag === 'External' ? 'external' : 'default-tag';
+              tagHtml = `<span class="event-tag ${tagClass}">${e.tag}</span>`;
+            }
+            // Link: meeting link if available, otherwise calendar event
+            const eventLink = e.meetingLink || e.htmlLink;
             return `
               <div class="event-item">
                 <div class="event-time">${timeStr}</div>
                 <div style="flex:1;min-width:0">
-                  <a class="event-name" href="${e.htmlLink}" target="_blank">${e.summary || 'No title'}</a>
+                  <a class="event-name" href="${eventLink}" target="_blank">${e.summary || 'No title'}</a>${tagHtml} ${durationHtml}
+                  ${attendeeHtml}
                 </div>
                 ${e.responseStatus ? `<span class="event-response ${responseClass}">${responseClass}</span>` : ''}
               </div>
@@ -714,7 +1038,33 @@
         }
 
         document.getElementById('calendar-badge').textContent = (data.events || []).length;
-        document.getElementById('stat-events').textContent = (data.events || []).length;
+
+        // Meeting stats for summary table
+        document.getElementById('stat-meetings').textContent = data.meetingCount || 0;
+        const totalMins = data.meetingMinutes || 0;
+        if (totalMins >= 60) {
+          const h = Math.floor(totalMins / 60);
+          const m = Math.round(totalMins % 60);
+          document.getElementById('stat-meeting-time').textContent = `${h}h ${m > 0 ? m + 'm' : ''}`.trim();
+        } else {
+          document.getElementById('stat-meeting-time').textContent = `${Math.round(totalMins)}m`;
+        }
+
+        // Weekly meeting time
+        const weekMins = data.weeklyMeetingMinutes || 0;
+        const weekEl = document.getElementById('stat-weekly-meeting-time');
+        if (weekMins >= 60) {
+          const wh = Math.floor(weekMins / 60);
+          const wm = Math.round(weekMins % 60);
+          weekEl.textContent = `${wh}h ${wm > 0 ? wm + 'm' : ''}`.trim();
+        } else {
+          weekEl.textContent = `${Math.round(weekMins)}m`;
+        }
+        // Warning if over 20 hours
+        if (weekMins >= 1200) {
+          weekEl.textContent = '⚠️ ' + weekEl.textContent;
+          weekEl.style.color = '#ff3b30';
+        }
 
         if (!data.pendingInvites || data.pendingInvites.length === 0) {
           invitesContainer.innerHTML = '<div class="card-body empty">No pending invites</div>';
@@ -731,13 +1081,122 @@
 
         const invCount = (data.pendingInvites || []).length;
         document.getElementById('invites-badge').textContent = invCount;
-        document.getElementById('stat-invites').textContent = invCount;
         if (invCount > 0) {
           document.getElementById('invites-badge').classList.add('warning');
-          document.getElementById('stat-invites').closest('.stat-pill').classList.add('warn');
         }
       }
     }
+
+    async function refreshReleases() {
+      const data = await fetchJSON('/api/releases');
+      const container = document.getElementById('releases-list');
+
+      if (data.error) {
+        container.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
+      } else if (!data.releases || data.releases.length === 0) {
+        container.innerHTML = '<div class="card-body empty">No upcoming releases</div>';
+      } else {
+        const now = new Date();
+        container.innerHTML = data.releases.map(r => {
+          // Format date
+          let dateStr;
+          if (r.isAllDay) {
+            const d = new Date(r.date + 'T00:00:00');
+            dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          } else {
+            const d = new Date(r.date);
+            dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          }
+          // Days until
+          const releaseDate = new Date(r.date);
+          const diffDays = Math.ceil((releaseDate - now) / (1000 * 60 * 60 * 24));
+          let countdown = '';
+          if (diffDays === 0) countdown = 'Today';
+          else if (diffDays === 1) countdown = 'Tomorrow';
+          else countdown = `In ${diffDays}d`;
+
+          return `
+            <div class="release-item">
+              <div class="release-date">${dateStr}</div>
+              <a class="release-name" href="${r.htmlLink}" target="_blank">${r.name}</a>
+              <span class="release-countdown">${countdown}</span>
+            </div>
+          `;
+        }).join('');
+        document.getElementById('releases-badge').textContent = data.releases.length;
+      }
+    }
+
+    async function refreshHighLevel() {
+      const data = await fetchJSON('/api/clickup/highlevel');
+      const container = document.getElementById('highlevel-list');
+
+      if (data.error) {
+        container.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
+      } else if (!data.tasks || data.tasks.length === 0) {
+        container.innerHTML = '<div class="card-body empty">No high level items</div>';
+      } else {
+        // Group tasks by their ClickUp status
+        const statusGroups = {};
+        const statusOrder = [];
+
+        data.tasks.forEach(t => {
+          const status = t.status || 'No Status';
+          if (!statusGroups[status]) {
+            statusGroups[status] = { label: status.charAt(0).toUpperCase() + status.slice(1), tasks: [], color: t.statusColor || '#86868b' };
+            statusOrder.push(status);
+          }
+          statusGroups[status].tasks.push(t);
+        });
+
+        let html = '';
+        statusOrder.forEach(key => {
+          const group = statusGroups[key];
+          html += `<div class="timeline-group">`;
+          html += `<div class="timeline-label">${group.label}</div>`;
+          group.tasks.forEach(t => {
+            const due = t.dueDate ? new Date(parseInt(t.dueDate)) : null;
+            let dateHint = '';
+            if (due) {
+              dateHint = due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            }
+            html += `
+              <div class="timeline-item">
+                <div class="timeline-bar" style="background: ${t.statusColor || group.color}"></div>
+                <a class="timeline-task-name" href="${t.url}" target="_blank">${t.name}</a>
+                ${dateHint ? `<span class="timeline-date-hint">${dateHint}</span>` : ''}
+              </div>
+            `;
+          });
+          html += `</div>`;
+        });
+        container.innerHTML = html;
+        document.getElementById('highlevel-badge').textContent = data.tasks.length;
+      }
+    }
+
+    function updateWeekInfo() {
+      const now = new Date();
+      // ISO week number
+      const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+
+      // Week start (Monday) and end (Sunday)
+      const day = now.getDay();
+      const diffToMon = day === 0 ? -6 : 1 - day;
+      const mon = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon);
+      const sun = new Date(mon.getTime() + 6 * 24 * 60 * 60 * 1000);
+      const fmt = { month: 'short', day: 'numeric' };
+      const monStr = mon.toLocaleDateString('en-US', fmt);
+      const sunStr = sun.toLocaleDateString('en-US', fmt);
+
+      document.getElementById('week-info').textContent = `Week ${weekNo} · ${monStr} – ${sunStr}`;
+    }
+
+    updateWeekInfo();
 
     async function refreshAll() {
       await Promise.all([
@@ -745,6 +1204,8 @@
         refreshSlack(),
         refreshEmail(),
         refreshCalendar(),
+        refreshReleases(),
+        refreshHighLevel(),
       ]);
       document.getElementById('last-updated').textContent =
         'Updated ' + new Date().toLocaleTimeString();
