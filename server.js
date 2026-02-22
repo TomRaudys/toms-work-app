@@ -520,43 +520,39 @@ async function fetchGeminiNotes(weekStart) {
   }
 }
 
+// Extract up to maxSentences from text, skipping boilerplate/headers
+function summariseText(text, maxSentences = 3) {
+  if (!text) return '';
+  // Remove common Gemini note boilerplate before extracting sentences
+  let cleaned = text
+    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+  // Strip leading boilerplate: title, "Invited", "Attachments", "Summary", emoji prefixes
+  cleaned = cleaned.replace(/^[\s\S]*?\bSummary\b\s*/i, '');
+  // If that stripped everything, fall back to original
+  if (cleaned.length < 20) cleaned = text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
+
+  // Split into sentences (handles ., !, ? followed by space or end)
+  const sentences = cleaned
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => {
+      if (s.length < 15) return false;
+      if (/^(attachment|meeting record|notes by gemini|invited|a summary wasn|if the meeting was transcribed)/i.test(s)) return false;
+      if (/^\W+$/.test(s)) return false;
+      return true;
+    });
+  return sentences.slice(0, maxSentences).join(' ');
+}
+
 function buildWeeklySummary(firefliesMeetings, geminiNotes) {
   const meetings = [];
-  const actionItems = [];
-  const decisions = [];
 
-  // Process Fireflies meetings
-  for (const m of firefliesMeetings) {
-    const date = new Date(parseInt(m.date));
-    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const durationMins = Math.round(m.duration || 0);
-    const durationStr = durationMins >= 60
-      ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`
-      : `${durationMins}m`;
+  // Build a set of Gemini meeting title keywords for dedup matching
+  const geminiTitles = new Set();
 
-    meetings.push({
-      source: 'fireflies',
-      title: m.title,
-      date: dateStr,
-      dateRaw: date.toISOString(),
-      duration: durationStr,
-      summary: m.summary?.short_summary || '',
-      overview: m.summary?.overview || '',
-    });
-
-    // Parse action items
-    if (m.summary?.action_items) {
-      const lines = m.summary.action_items.split('\n').filter(l => l.trim());
-      for (const line of lines) {
-        const cleaned = line.replace(/^\*\*.*?\*\*\s*/, '').replace(/\(\d+:\d+\)\s*$/, '').trim();
-        if (cleaned && !cleaned.startsWith('**')) {
-          actionItems.push({ text: cleaned, meeting: m.title, date: dateStr });
-        }
-      }
-    }
-  }
-
-  // Process Gemini notes
+  // Process Gemini notes first (they take priority)
   for (const note of geminiNotes) {
     const date = new Date(note.createdTime);
     const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -570,47 +566,54 @@ function buildWeeklySummary(firefliesMeetings, geminiNotes) {
     // Try to remove date portion (e.g. "2026/02/20 17:56 CET")
     title = title.replace(/\s*-?\s*\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}\s+\w+\s*$/, '').trim();
 
+    const finalTitle = title || note.name;
+    // Store normalised title keywords for dedup matching against Fireflies
+    geminiTitles.add(finalTitle.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim());
+
     meetings.push({
       source: 'gemini',
-      title: title || note.name,
+      title: finalTitle,
       date: dateStr,
       dateRaw: date.toISOString(),
       link: note.link,
-      summary: '',
-      content: note.content,
+      summary: summariseText(note.content, 3),
     });
-
-    // Extract action items from Gemini notes (lines starting with action-like patterns)
-    if (note.content) {
-      const lines = note.content.split('\n');
-      let inActionSection = false;
-      for (const line of lines) {
-        const l = line.trim().toLowerCase();
-        if (l.includes('action item') || l.includes('next step') || l.includes('to do') || l.includes('follow up')) {
-          inActionSection = true;
-          continue;
-        }
-        if (inActionSection && line.trim().match(/^[-•*]\s+/)) {
-          actionItems.push({
-            text: line.trim().replace(/^[-•*]\s+/, ''),
-            meeting: title || note.name,
-            date: dateStr,
-          });
-        }
-        // Stop action section on empty line or new header
-        if (inActionSection && (!line.trim() || line.trim().match(/^[#A-Z]/))) {
-          inActionSection = false;
-        }
-      }
-    }
   }
 
-  // Sort meetings by date
-  meetings.sort((a, b) => new Date(a.dateRaw) - new Date(b.dateRaw));
+  // Process Fireflies meetings — skip if Gemini already has a note for the same meeting
+  for (const m of firefliesMeetings) {
+    const date = new Date(parseInt(m.date));
+    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const durationMins = Math.round(m.duration || 0);
+    const durationStr = durationMins >= 60
+      ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`
+      : `${durationMins}m`;
+
+    // Check if Gemini already covers this meeting (fuzzy title match)
+    const ffNorm = m.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const ffWords = ffNorm.split(' ').filter(w => w.length > 2);
+    const hasDuplicate = [...geminiTitles].some(gt => {
+      // Match if most significant words from Fireflies title appear in a Gemini title
+      const matchCount = ffWords.filter(w => gt.includes(w)).length;
+      return matchCount >= Math.min(2, ffWords.length);
+    });
+    if (hasDuplicate) continue;
+
+    meetings.push({
+      source: 'fireflies',
+      title: m.title,
+      date: dateStr,
+      dateRaw: date.toISOString(),
+      duration: durationStr,
+      summary: summariseText(m.summary?.short_summary || m.summary?.overview || '', 3),
+    });
+  }
+
+  // Sort meetings newest first
+  meetings.sort((a, b) => new Date(b.dateRaw) - new Date(a.dateRaw));
 
   return {
     meetings,
-    actionItems: actionItems.slice(0, 20),
     meetingCount: meetings.length,
     sourceCount: { fireflies: firefliesMeetings.length, gemini: geminiNotes.length },
   };
