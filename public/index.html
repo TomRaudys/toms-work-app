@@ -1010,7 +1010,15 @@
         const linkStart = m.link ? `<a href="${m.link}" target="_blank" style="text-decoration:none;color:inherit;">` : '';
         const linkEnd = m.link ? '</a>' : '';
 
-        const summaryText = m.summary || '';
+        // Build summary text - for fireflies use short_summary, for gemini extract key lines
+        let summaryText = '';
+        if (m.source === 'fireflies' && m.summary) {
+          summaryText = m.summary.length > 250 ? m.summary.substring(0, 250) + '...' : m.summary;
+        } else if (m.source === 'gemini' && m.content) {
+          const lines = m.content.split('\n').filter(l => l.trim() && l.trim().length > 10);
+          summaryText = lines.slice(0, 4).join(' ').substring(0, 250);
+          if (summaryText.length >= 250) summaryText += '...';
+        }
 
         html += `
           <div class="weekly-meeting-block">

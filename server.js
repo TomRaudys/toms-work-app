@@ -520,32 +520,6 @@ async function fetchGeminiNotes(weekStart) {
   }
 }
 
-// Extract up to maxSentences from text, skipping boilerplate/headers
-function summariseText(text, maxSentences = 3) {
-  if (!text) return '';
-  // Remove common Gemini note boilerplate before extracting sentences
-  let cleaned = text
-    .replace(/\n+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  // Strip leading boilerplate: title, "Invited", "Attachments", "Summary", emoji prefixes
-  cleaned = cleaned.replace(/^[\s\S]*?\bSummary\b\s*/i, '');
-  // If that stripped everything, fall back to original
-  if (cleaned.length < 20) cleaned = text.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
-
-  // Split into sentences (handles ., !, ? followed by space or end)
-  const sentences = cleaned
-    .split(/(?<=[.!?])\s+/)
-    .map(s => s.trim())
-    .filter(s => {
-      if (s.length < 15) return false;
-      if (/^(attachment|meeting record|notes by gemini|invited|a summary wasn|if the meeting was transcribed)/i.test(s)) return false;
-      if (/^\W+$/.test(s)) return false;
-      return true;
-    });
-  return sentences.slice(0, maxSentences).join(' ');
-}
-
 function buildWeeklySummary(firefliesMeetings, geminiNotes) {
   const meetings = [];
 
@@ -576,7 +550,8 @@ function buildWeeklySummary(firefliesMeetings, geminiNotes) {
       date: dateStr,
       dateRaw: date.toISOString(),
       link: note.link,
-      summary: summariseText(note.content, 3),
+      summary: '',
+      content: note.content,
     });
   }
 
@@ -605,7 +580,8 @@ function buildWeeklySummary(firefliesMeetings, geminiNotes) {
       date: dateStr,
       dateRaw: date.toISOString(),
       duration: durationStr,
-      summary: summariseText(m.summary?.short_summary || m.summary?.overview || '', 3),
+      summary: m.summary?.short_summary || '',
+      overview: m.summary?.overview || '',
     });
   }
 
