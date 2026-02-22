@@ -100,23 +100,44 @@ app.get('/api/slack/todos', async (req, res) => {
 
 app.get('/api/slack/unread', async (req, res) => {
   try {
-    const token = process.env.SLACK_USER_TOKEN;
-    if (!token) return res.json({ error: 'No Slack token configured' });
+    const xoxcToken = process.env.SLACK_XOXC_TOKEN;
+    const dCookie = process.env.SLACK_D_COOKIE;
+    if (!xoxcToken || !dCookie) return res.json({ error: 'No Slack xoxc token or d cookie configured' });
 
-    // Get unread count from conversations
-    const resp = await fetch('https://slack.com/api/users.counts?include_threads=true', {
-      headers: { Authorization: `Bearer ${token}` }
+    // Use client.counts to get unread counts (works with xoxc tokens)
+    const resp = await fetch('https://app.slack.com/api/client.counts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Cookie': `d=${dCookie}`,
+      },
+      body: `token=${encodeURIComponent(xoxcToken)}&thread_count_by_channel=true`,
     });
     const data = await resp.json();
+
+    if (!data.ok) {
+      return res.json({ error: data.error || 'Slack client.counts API error' });
+    }
+
+    // Count channels/groups/DMs with unreads
     let unreadChannels = 0;
     let unreadDMs = 0;
-    if (data.channels) {
-      unreadChannels = data.channels.filter(c => c.has_unreads).length;
+    let unreadMentions = 0;
+
+    for (const ch of (data.channels || [])) {
+      if (ch.has_unreads) unreadChannels++;
+      unreadMentions += (ch.mention_count || 0);
     }
-    if (data.ims) {
-      unreadDMs = data.ims.filter(c => c.has_unreads).length;
+    for (const mp of (data.mpims || [])) {
+      if (mp.has_unreads) unreadDMs++;
+      unreadMentions += (mp.mention_count || 0);
     }
-    res.json({ unreadChannels, unreadDMs, total: unreadChannels + unreadDMs });
+    for (const im of (data.ims || [])) {
+      if (im.has_unreads) unreadDMs++;
+      unreadMentions += (im.mention_count || 0);
+    }
+
+    res.json({ unreadChannels, unreadDMs, unreadMentions, total: unreadChannels + unreadDMs });
   } catch (err) {
     console.error('Slack unread error:', err.message);
     res.json({ error: err.message });
@@ -349,7 +370,7 @@ app.get('/api/clickup/highlevel', async (req, res) => {
     if (!token || !listId) return res.json({ error: 'No ClickUp token or list ID configured' });
 
     const resp = await fetch(
-      `https://api.clickup.com/api/v2/list/${listId}/task?include_closed=false&subtasks=true&order_by=due_date`,
+      `https://api.clickup.com/api/v2/list/${listId}/task?include_closed=false&subtasks=false&order_by=due_date`,
       { headers: { Authorization: token } }
     );
     const data = await resp.json();
