@@ -731,7 +731,7 @@
     <!-- Column 2, Row 4-5: High Level -->
     <div class="card card-highlevel">
       <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🎯</span> Studio High Level</h2>
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🎯</span> Studio High Level ClickUp</h2>
         <span class="badge" id="highlevel-badge">0</span>
       </div>
       <div class="card-body scrollable" id="highlevel-list">
@@ -1160,10 +1160,13 @@
             if (due) {
               dateHint = due.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             }
+            const pStyle = t.priority ? priorityStyle(t.priority) : null;
+            const priorityHtml = pStyle ? `<span class="task-priority" style="background: ${pStyle.bg}; color: ${pStyle.color}">${t.priority}</span>` : '';
             html += `
               <div class="timeline-item">
                 <div class="timeline-bar" style="background: ${t.statusColor || group.color}"></div>
                 <a class="timeline-task-name" href="${t.url}" target="_blank">${t.name}</a>
+                ${priorityHtml}
                 ${dateHint ? `<span class="timeline-date-hint">${dateHint}</span>` : ''}
               </div>
             `;

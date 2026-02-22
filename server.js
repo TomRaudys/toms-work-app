@@ -379,6 +379,8 @@ app.get('/api/clickup/highlevel', async (req, res) => {
       name: t.name,
       status: t.status?.status,
       statusColor: t.status?.color,
+      priority: t.priority?.priority,
+      priorityColor: t.priority?.color,
       url: t.url,
       dueDate: t.due_date,
       startDate: t.start_date,
