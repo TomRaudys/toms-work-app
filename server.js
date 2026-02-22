@@ -392,6 +392,288 @@ app.get('/api/clickup/highlevel', async (req, res) => {
   }
 });
 
+// --- Weekly Summary (Fireflies + Google Drive "Notes by Gemini") ---
+// Cache to avoid re-fetching on every request
+let weeklySummaryCache = { data: null, sourceHash: null, lastFetch: 0 };
+
+function getWeekBounds() {
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMon = day === 0 ? -6 : 1 - day;
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon);
+  const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+  return { start, end };
+}
+
+async function fetchFirefliesMeetings(weekStart, weekEnd) {
+  const apiKey = process.env.FIREFLIES_API_KEY;
+  if (!apiKey) return [];
+
+  try {
+    const resp = await fetch('https://api.fireflies.ai/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        query: `query {
+          transcripts(limit: 20) {
+            id
+            title
+            date
+            duration
+            organizer_email
+            summary {
+              shorthand_bullet
+              action_items
+              overview
+              short_summary
+            }
+            participants
+          }
+        }`
+      }),
+    });
+    const json = await resp.json();
+    if (json.errors) {
+      console.error('Fireflies GraphQL errors:', json.errors);
+      return [];
+    }
+    const transcripts = json.data?.transcripts || [];
+    const myEmail = 'tom@flat2vr.com';
+    // Filter to this week + only meetings I attended/was invited to
+    return transcripts.filter(t => {
+      const d = new Date(parseInt(t.date));
+      if (d < weekStart || d >= weekEnd) return false;
+      // Check if I'm organizer or participant
+      const isOrganizer = t.organizer_email === myEmail;
+      const isParticipant = (t.participants || []).some(p =>
+        p === myEmail || (typeof p === 'string' && p.toLowerCase().includes('tom'))
+      );
+      return isOrganizer || isParticipant;
+    });
+  } catch (err) {
+    console.error('Fireflies fetch error:', err.message);
+    return [];
+  }
+}
+
+async function fetchGeminiNotes(weekStart) {
+  if (!process.env.GOOGLE_CLIENT_ID) return [];
+
+  try {
+    const auth = getGoogleAuth();
+    const drive = google.drive({ version: 'v3', auth });
+    const docs = google.docs({ version: 'v1', auth });
+
+    // Search for "Notes by Gemini" docs modified this week
+    const driveResp = await drive.files.list({
+      q: `name contains 'Notes by Gemini' and mimeType='application/vnd.google-apps.document' and modifiedTime > '${weekStart.toISOString()}'`,
+      fields: 'files(id, name, createdTime, modifiedTime, webViewLink)',
+      orderBy: 'createdTime desc',
+      pageSize: 20,
+    });
+
+    const files = driveResp.data.files || [];
+    const results = [];
+
+    for (const file of files) {
+      try {
+        const docResp = await docs.documents.get({ documentId: file.id });
+        // Extract plain text from doc body
+        let text = '';
+        const body = docResp.data.body;
+        if (body?.content) {
+          for (const el of body.content) {
+            if (el.paragraph?.elements) {
+              for (const pe of el.paragraph.elements) {
+                if (pe.textRun?.content) {
+                  text += pe.textRun.content;
+                }
+              }
+            }
+          }
+        }
+        results.push({
+          id: file.id,
+          name: file.name,
+          createdTime: file.createdTime,
+          link: file.webViewLink,
+          content: text.trim(),
+        });
+      } catch (docErr) {
+        console.error(`Error reading doc ${file.name}:`, docErr.message);
+        results.push({
+          id: file.id,
+          name: file.name,
+          createdTime: file.createdTime,
+          link: file.webViewLink,
+          content: '(Could not read document content)',
+        });
+      }
+    }
+    return results;
+  } catch (err) {
+    console.error('Google Drive/Docs error:', err.message);
+    return [];
+  }
+}
+
+function buildWeeklySummary(firefliesMeetings, geminiNotes) {
+  const meetings = [];
+  const actionItems = [];
+  const decisions = [];
+
+  // Process Fireflies meetings
+  for (const m of firefliesMeetings) {
+    const date = new Date(parseInt(m.date));
+    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const durationMins = Math.round(m.duration || 0);
+    const durationStr = durationMins >= 60
+      ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`
+      : `${durationMins}m`;
+
+    meetings.push({
+      source: 'fireflies',
+      title: m.title,
+      date: dateStr,
+      dateRaw: date.toISOString(),
+      duration: durationStr,
+      summary: m.summary?.short_summary || '',
+      overview: m.summary?.overview || '',
+    });
+
+    // Parse action items
+    if (m.summary?.action_items) {
+      const lines = m.summary.action_items.split('\n').filter(l => l.trim());
+      for (const line of lines) {
+        const cleaned = line.replace(/^\*\*.*?\*\*\s*/, '').replace(/\(\d+:\d+\)\s*$/, '').trim();
+        if (cleaned && !cleaned.startsWith('**')) {
+          actionItems.push({ text: cleaned, meeting: m.title, date: dateStr });
+        }
+      }
+    }
+  }
+
+  // Process Gemini notes
+  for (const note of geminiNotes) {
+    const date = new Date(note.createdTime);
+    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+
+    // Extract meeting title from doc name (format: "⚙ Name - date - Notes by Gemini")
+    let title = note.name;
+    const geminiIdx = title.indexOf(' - Notes by Gemini');
+    if (geminiIdx > 0) title = title.substring(0, geminiIdx);
+    // Remove emoji prefix and date suffix
+    title = title.replace(/^[^\w]*/, '').trim();
+    // Try to remove date portion (e.g. "2026/02/20 17:56 CET")
+    title = title.replace(/\s*-?\s*\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}\s+\w+\s*$/, '').trim();
+
+    meetings.push({
+      source: 'gemini',
+      title: title || note.name,
+      date: dateStr,
+      dateRaw: date.toISOString(),
+      link: note.link,
+      summary: '',
+      content: note.content,
+    });
+
+    // Extract action items from Gemini notes (lines starting with action-like patterns)
+    if (note.content) {
+      const lines = note.content.split('\n');
+      let inActionSection = false;
+      for (const line of lines) {
+        const l = line.trim().toLowerCase();
+        if (l.includes('action item') || l.includes('next step') || l.includes('to do') || l.includes('follow up')) {
+          inActionSection = true;
+          continue;
+        }
+        if (inActionSection && line.trim().match(/^[-•*]\s+/)) {
+          actionItems.push({
+            text: line.trim().replace(/^[-•*]\s+/, ''),
+            meeting: title || note.name,
+            date: dateStr,
+          });
+        }
+        // Stop action section on empty line or new header
+        if (inActionSection && (!line.trim() || line.trim().match(/^[#A-Z]/))) {
+          inActionSection = false;
+        }
+      }
+    }
+  }
+
+  // Sort meetings by date
+  meetings.sort((a, b) => new Date(a.dateRaw) - new Date(b.dateRaw));
+
+  return {
+    meetings,
+    actionItems: actionItems.slice(0, 20),
+    meetingCount: meetings.length,
+    sourceCount: { fireflies: firefliesMeetings.length, gemini: geminiNotes.length },
+  };
+}
+
+app.get('/api/weekly-summary', async (req, res) => {
+  try {
+    const { start, end } = getWeekBounds();
+
+    // Quick source count check for caching
+    const [fireflies, gemini] = await Promise.all([
+      fetchFirefliesMeetings(start, end),
+      fetchGeminiNotes(start),
+    ]);
+
+    const sourceHash = `ff:${fireflies.length}-gn:${gemini.length}`;
+    const now = Date.now();
+    const cacheAge = now - weeklySummaryCache.lastFetch;
+
+    // Use cache if source counts match and cache is less than 10 minutes old
+    if (weeklySummaryCache.data && weeklySummaryCache.sourceHash === sourceHash && cacheAge < 600000) {
+      return res.json(weeklySummaryCache.data);
+    }
+
+    const summary = buildWeeklySummary(fireflies, gemini);
+    weeklySummaryCache = { data: summary, sourceHash, lastFetch: now };
+    res.json(summary);
+  } catch (err) {
+    console.error('Weekly summary error:', err.message);
+    res.json({ error: err.message });
+  }
+});
+
+// --- Google OAuth re-auth (for adding new scopes) ---
+app.get('/auth/google', (req, res) => {
+  const auth = getGoogleAuth();
+  const url = auth.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: [
+      'https://www.googleapis.com/auth/gmail.readonly',
+      'https://www.googleapis.com/auth/calendar.readonly',
+      'https://www.googleapis.com/auth/drive.readonly',
+      'https://www.googleapis.com/auth/documents.readonly',
+    ],
+  });
+  res.redirect(url);
+});
+
+app.get('/auth/google/callback', async (req, res) => {
+  try {
+    const auth = getGoogleAuth();
+    const { tokens } = await auth.getToken(req.query.code);
+    console.log('\n=== NEW REFRESH TOKEN ===');
+    console.log(tokens.refresh_token);
+    console.log('=========================\n');
+    res.send('<h2>Auth successful!</h2><p>New refresh token has been printed to the server console. Update your .env file with it.</p><p>You can close this tab.</p>');
+  } catch (err) {
+    console.error('Auth error:', err.message);
+    res.status(500).send('Auth error: ' + err.message);
+  }
+});
+
 // --- Health check ---
 app.get('/api/health', (req, res) => {
   res.json({

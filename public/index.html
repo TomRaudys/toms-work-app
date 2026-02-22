@@ -567,6 +567,96 @@
       white-space: nowrap;
     }
 
+    /* Weekly Summary */
+    .weekly-summary-content {
+      font-size: 13px;
+      line-height: 1.6;
+      color: #1d1d1f;
+    }
+
+    .weekly-meeting-block {
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    }
+
+    .weekly-meeting-block:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .weekly-meeting-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .weekly-meeting-source {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 1px 6px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .weekly-meeting-source.fireflies { background: rgba(139, 92, 246, 0.12); color: #7c3aed; }
+    .weekly-meeting-source.gemini { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
+
+    .weekly-meeting-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1d1d1f;
+    }
+
+    .weekly-meeting-date {
+      font-size: 11px;
+      color: #86868b;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+
+    .weekly-meeting-summary {
+      font-size: 12px;
+      color: #3c3c43;
+      line-height: 1.5;
+      margin-top: 4px;
+    }
+
+    .weekly-section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #6e6e73;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      padding: 6px 0 4px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      margin-bottom: 6px;
+      margin-top: 6px;
+    }
+
+    .weekly-action-item {
+      display: flex;
+      gap: 8px;
+      padding: 4px 0;
+      font-size: 12px;
+      color: #1d1d1f;
+      line-height: 1.4;
+    }
+
+    .weekly-action-bullet {
+      color: #ff9500;
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+
+    .weekly-action-meeting {
+      font-size: 10px;
+      color: #86868b;
+      margin-top: 1px;
+    }
+
     /* Timeline view for High Level */
     .timeline-group {
       margin-bottom: 10px;
@@ -739,14 +829,14 @@
       </div>
     </div>
 
-    <!-- Column 3, Row 1-2: ClickUp Tasks (tall) -->
+    <!-- Column 2, Row 3-5: Weekly Summary -->
     <div class="card card-clickup">
       <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);"><svg width="14" height="14" viewBox="0 0 128 128" fill="none"><path d="M24.7 95.3l19-17.5c5.1 5.8 10.7 8.6 20.3 8.6 9.6 0 15.4-3 20.5-8.9l19 17.3C94 106.1 82 112.7 64 112.7c-18.2 0-30-6.5-39.3-17.4z" fill="#7B68EE"/><path d="M64 55.8l-22.4 20.7-19-17.5L64 21.3l41.5 37.7-19 17.5L64 55.8z" fill="#49CCF9"/></svg></span> ClickUp Inbox</h2>
-        <span class="badge" id="clickup-badge">0</span>
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">📋</span> Weekly Summary</h2>
+        <span class="badge" id="weekly-badge">0</span>
       </div>
-      <div class="card-body scrollable" id="clickup-tasks">
-        <div class="loading">Loading tasks...</div>
+      <div class="card-body scrollable" id="weekly-summary">
+        <div class="loading">Loading weekly summary...</div>
       </div>
     </div>
 
@@ -914,37 +1004,76 @@
     }
 
     // --- Data Refresh ---
-    async function refreshClickUp() {
-      const [taskData, notifData] = await Promise.all([
-        fetchJSON('/api/clickup/tasks'),
-        fetchJSON('/api/clickup/notifications'),
-      ]);
+    let lastWeeklySummaryHash = null;
 
-      const container = document.getElementById('clickup-tasks');
-      if (taskData.error) {
-        container.innerHTML = `<div class="error-msg">&#9888; ${taskData.error}</div>`;
-      } else if (!taskData.tasks || taskData.tasks.length === 0) {
-        container.innerHTML = '<div class="card-body empty">No open tasks assigned to you</div>';
-      } else {
-        container.innerHTML = taskData.tasks.map(t => {
-          const pStyle = priorityStyle(t.priority);
-          const dueText = t.dueDate ? formatDate(t.dueDate) : '';
-          return `
-            <div class="task-item">
-              <div class="task-status" style="background: ${t.statusColor || '#3b82f6'}"></div>
-              <div class="task-info">
-                <a class="task-name" href="${t.url}" target="_blank">${t.name}</a>
-                <div class="task-meta">${t.folder || ''} ${t.list ? '&rarr; ' + t.list : ''} ${dueText ? '&middot; ' + dueText : ''}</div>
-              </div>
-              ${t.priority ? `<div class="task-priority" style="background: ${pStyle.bg}; color: ${pStyle.color}">${t.priority}</div>` : ''}
-            </div>
-          `;
-        }).join('');
-        document.getElementById('clickup-badge').textContent = taskData.tasks.length;
+    async function refreshWeeklySummary() {
+      const data = await fetchJSON('/api/weekly-summary');
+      const container = document.getElementById('weekly-summary');
+
+      if (data.error) {
+        container.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`;
+        return;
       }
 
-      // Notification data (no longer displayed in summary, but kept for badge)
+      if (!data.meetings || data.meetings.length === 0) {
+        container.innerHTML = '<div class="card-body empty">No meetings recorded this week yet</div>';
+        document.getElementById('weekly-badge').textContent = '0';
+        return;
+      }
 
+      document.getElementById('weekly-badge').textContent = data.meetingCount || 0;
+
+      let html = '';
+
+      // Meetings section
+      html += '<div class="weekly-section-label">Meetings</div>';
+      for (const m of data.meetings) {
+        const sourceLabel = m.source === 'fireflies' ? 'Fireflies' : 'Gemini';
+        const sourceClass = m.source;
+        const linkStart = m.link ? `<a href="${m.link}" target="_blank" style="text-decoration:none;color:inherit;">` : '';
+        const linkEnd = m.link ? '</a>' : '';
+
+        // Build summary text - for fireflies use short_summary, for gemini extract key lines
+        let summaryText = '';
+        if (m.source === 'fireflies' && m.summary) {
+          // Truncate to ~200 chars for the card
+          summaryText = m.summary.length > 250 ? m.summary.substring(0, 250) + '...' : m.summary;
+        } else if (m.source === 'gemini' && m.content) {
+          // Take first meaningful lines from Gemini notes
+          const lines = m.content.split('\n').filter(l => l.trim() && l.trim().length > 10);
+          summaryText = lines.slice(0, 4).join(' ').substring(0, 250);
+          if (summaryText.length >= 250) summaryText += '...';
+        }
+
+        html += `
+          <div class="weekly-meeting-block">
+            <div class="weekly-meeting-header">
+              <span class="weekly-meeting-source ${sourceClass}">${sourceLabel}</span>
+              ${linkStart}<span class="weekly-meeting-title">${m.title}</span>${linkEnd}
+              <span class="weekly-meeting-date">${m.date}${m.duration ? ' · ' + m.duration : ''}</span>
+            </div>
+            ${summaryText ? `<div class="weekly-meeting-summary">${summaryText}</div>` : ''}
+          </div>
+        `;
+      }
+
+      // Action items section
+      if (data.actionItems && data.actionItems.length > 0) {
+        html += '<div class="weekly-section-label">Action Items</div>';
+        for (const item of data.actionItems) {
+          html += `
+            <div class="weekly-action-item">
+              <span class="weekly-action-bullet">→</span>
+              <div>
+                <div>${item.text}</div>
+                <div class="weekly-action-meeting">${item.meeting} · ${item.date}</div>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      container.innerHTML = html;
     }
 
     async function refreshSlack() {
@@ -1203,7 +1332,7 @@
 
     async function refreshAll() {
       await Promise.all([
-        refreshClickUp(),
+        refreshWeeklySummary(),
         refreshSlack(),
         refreshEmail(),
         refreshCalendar(),
