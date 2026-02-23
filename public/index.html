@@ -484,15 +484,15 @@
       text-align: center;
     }
 
-    .event-tag.ooo { background: rgba(142, 142, 147, 0.3); color: #fff; }
-    .event-tag.focus { background: #e1e1e1; color: #555; }
-    .event-tag.executive { background: #fbd75b; color: #1d1d1d; }
-    .event-tag.development { background: #ffb878; color: #1d1d1d; }
-    .event-tag.team-hr { background: #7ae7bf; color: #1d1d1d; }
-    .event-tag.external { background: #ff887c; color: #1d1d1d; }
-    .event-tag.marketing { background: #dbadff; color: #1d1d1d; }
-    .event-tag.director { background: #51b749; color: #fff; }
-    .event-tag.default-tag { background: rgba(0, 122, 255, 0.15); color: #0055d4; }
+    .event-tag.ooo { background: rgba(142, 142, 147, 0.15); color: #8e8e93; }
+    .event-tag.focus { background: rgba(180, 180, 190, 0.18); color: #8e8e93; }
+    .event-tag.executive { background: rgba(251, 215, 91, 0.22); color: #9a7b00; }
+    .event-tag.development { background: rgba(255, 184, 120, 0.22); color: #b36b1a; }
+    .event-tag.team-hr { background: rgba(122, 231, 191, 0.22); color: #1a8a5a; }
+    .event-tag.external { background: rgba(255, 136, 124, 0.22); color: #c0493e; }
+    .event-tag.marketing { background: rgba(219, 173, 255, 0.22); color: #8b5fbf; }
+    .event-tag.director { background: rgba(81, 183, 73, 0.22); color: #3a8a33; }
+    .event-tag.default-tag { background: rgba(0, 122, 255, 0.12); color: #4a90d9; }
 
     .event-duration {
       font-size: 10px;
@@ -1119,16 +1119,18 @@
                 attendeeHtml = `<div style="font-size:10px;margin-top:2px">${parts.join(' &middot; ')}</div>`;
               }
             }
-            // Event tag (type-based)
-            let tagHtml = '';
+            // Event tag (type-based) — always render placeholder to keep columns aligned
+            const tagClassMap = {
+              'OOO': 'ooo', 'Focus': 'focus', 'Executive': 'executive',
+              'Development': 'development', 'Team/HR': 'team-hr', 'External': 'external',
+              'Marketing': 'marketing', 'Director': 'director',
+            };
+            let tagHtml;
             if (e.tag) {
-              const tagClassMap = {
-                'OOO': 'ooo', 'Focus': 'focus', 'Executive': 'executive',
-                'Development': 'development', 'Team/HR': 'team-hr', 'External': 'external',
-                'Marketing': 'marketing', 'Director': 'director',
-              };
               const tagClass = tagClassMap[e.tag] || 'default-tag';
               tagHtml = `<span class="event-tag ${tagClass}">${e.tag}</span>`;
+            } else {
+              tagHtml = `<span class="event-tag" style="visibility:hidden">Placeholder</span>`;
             }
             // Link: meeting link if available, otherwise calendar event
             const eventLink = e.meetingLink || e.htmlLink;
