@@ -464,15 +464,24 @@
       line-height: 1.3;
     }
 
+    .event-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      min-width: 180px;
+      justify-content: flex-end;
+    }
+
     .event-tag {
       display: inline-block;
       font-size: 10px;
       font-weight: 600;
       padding: 1px 6px;
       border-radius: 4px;
-      margin-left: 6px;
-      vertical-align: middle;
       white-space: nowrap;
+      min-width: 70px;
+      text-align: center;
     }
 
     .event-tag.ooo { background: rgba(142, 142, 147, 0.3); color: #fff; }
@@ -1130,9 +1139,11 @@
                   <a class="event-name" href="${eventLink}" target="_blank">${e.summary || 'No title'}</a>
                   ${attendeeHtml}
                 </div>
-                ${tagHtml}
-                ${durationHtml}
-                ${e.responseStatus ? `<span class="event-response ${responseClass}">${responseClass}</span>` : ''}
+                <div class="event-right">
+                  ${tagHtml}
+                  ${durationHtml}
+                  ${e.responseStatus ? `<span class="event-response ${responseClass}">${responseClass}</span>` : ''}
+                </div>
               </div>
             `;
           }).join('');
