@@ -514,7 +514,7 @@
 
     .event-response.accepted { background: rgba(52, 199, 89, 0.15); color: #248a3d; }
     .event-response.tentative { background: rgba(255, 149, 0, 0.15); color: #c77c00; }
-    .event-response.needsAction { background: rgba(255, 59, 48, 0.15); color: #d70015; }
+    .event-response.pending { background: rgba(255, 149, 0, 0.15); color: #c77c00; }
     .event-response.declined { background: rgba(0, 0, 0, 0.06); color: #86868b; }
 
     /* Invite item */
@@ -1092,7 +1092,7 @@
         } else {
           eventsContainer.innerHTML = data.events.map(e => {
             const timeStr = e.isAllDay ? 'All day' : formatTime(e.start);
-            const responseClass = e.responseStatus || 'accepted';
+            const responseClass = e.responseStatus === 'needsAction' ? 'pending' : (e.responseStatus || 'accepted');
             // Calculate duration
             let durationHtml = '';
             if (!e.isAllDay && e.start && e.end) {
