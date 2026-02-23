@@ -206,7 +206,16 @@ app.get('/api/calendar/today', async (req, res) => {
         needsAction: otherAttendees.filter(a => a.responseStatus === 'needsAction').length,
         tentative: otherAttendees.filter(a => a.responseStatus === 'tentative').length,
       } : null;
-      // Determine event tag from eventType, organizer domain
+      // Determine event tag from colorId (matches Google Calendar tags)
+      const colorTagMap = {
+        '5': 'Executive',
+        '6': 'Development',
+        '2': 'Team/HR',
+        '8': 'Focus',
+        '4': 'External',
+        '3': 'Marketing',
+        '10': 'Director',
+      };
       let tag = null;
       const eventType = e.eventType || 'default';
       if (eventType === 'outOfOffice') {
@@ -215,13 +224,8 @@ app.get('/api/calendar/today', async (req, res) => {
         tag = 'Focus';
       } else if (eventType === 'workingLocation') {
         tag = 'Location';
-      } else {
-        // Check if external (organizer from different domain than user)
-        const orgEmail = e.organizer?.email || '';
-        const userDomain = 'flat2vr.com';
-        if (orgEmail && !orgEmail.includes('@calendar.google.com') && !orgEmail.endsWith('@' + userDomain)) {
-          tag = 'External';
-        }
+      } else if (e.colorId && colorTagMap[e.colorId]) {
+        tag = colorTagMap[e.colorId];
       }
 
       // Meeting link: prefer hangoutLink, then conferenceData video entry

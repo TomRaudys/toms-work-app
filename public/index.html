@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tom's Work Dashboard</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -476,8 +477,13 @@
     }
 
     .event-tag.ooo { background: rgba(142, 142, 147, 0.15); color: #636366; }
-    .event-tag.focus { background: rgba(88, 86, 214, 0.15); color: #5856d6; }
-    .event-tag.external { background: rgba(255, 149, 0, 0.15); color: #c77c00; }
+    .event-tag.focus { background: rgba(142, 142, 147, 0.15); color: #636366; }
+    .event-tag.executive { background: rgba(251, 215, 91, 0.25); color: #8a6d00; }
+    .event-tag.development { background: rgba(255, 184, 120, 0.25); color: #b35c00; }
+    .event-tag.team-hr { background: rgba(122, 231, 191, 0.25); color: #0e7a4f; }
+    .event-tag.external { background: rgba(255, 136, 124, 0.25); color: #c0392b; }
+    .event-tag.marketing { background: rgba(219, 173, 255, 0.25); color: #7b2d8e; }
+    .event-tag.director { background: rgba(81, 183, 73, 0.25); color: #2d7a27; }
     .event-tag.default-tag { background: rgba(0, 122, 255, 0.1); color: #0055d4; }
 
     .event-duration {
@@ -1107,7 +1113,12 @@
             // Event tag (type-based)
             let tagHtml = '';
             if (e.tag) {
-              const tagClass = e.tag === 'OOO' ? 'ooo' : e.tag === 'Focus' ? 'focus' : e.tag === 'External' ? 'external' : 'default-tag';
+              const tagClassMap = {
+                'OOO': 'ooo', 'Focus': 'focus', 'Executive': 'executive',
+                'Development': 'development', 'Team/HR': 'team-hr', 'External': 'external',
+                'Marketing': 'marketing', 'Director': 'director',
+              };
+              const tagClass = tagClassMap[e.tag] || 'default-tag';
               tagHtml = `<span class="event-tag ${tagClass}">${e.tag}</span>`;
             }
             // Link: meeting link if available, otherwise calendar event
