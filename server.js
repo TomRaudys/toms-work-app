@@ -197,7 +197,11 @@ app.get('/api/calendar/today', async (req, res) => {
       orderBy: 'startTime',
     });
 
-    const events = (eventsResp.data.items || []).map(e => {
+    const events = (eventsResp.data.items || []).filter(e => {
+      // Hide working location events (e.g. "Home")
+      if ((e.eventType || 'default') === 'workingLocation') return false;
+      return true;
+    }).map(e => {
       const otherAttendees = (e.attendees || []).filter(a => !a.self);
       const attendeeCounts = otherAttendees.length > 0 ? {
         total: otherAttendees.length,
