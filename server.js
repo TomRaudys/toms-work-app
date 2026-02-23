@@ -327,41 +327,56 @@ app.get('/api/calendar/today', async (req, res) => {
   }
 });
 
-// --- Upcoming Releases (Flat2VR Internal Calendar) ---
+// --- Upcoming Releases & Milestones ---
 app.get('/api/releases', async (req, res) => {
   try {
-    if (!process.env.GOOGLE_CLIENT_ID || !process.env.FLAT2VR_CALENDAR_ID) {
-      return res.json({ error: 'No Google credentials or calendar ID configured' });
+    if (!process.env.GOOGLE_CLIENT_ID) {
+      return res.json({ error: 'No Google credentials configured' });
     }
     const auth = getGoogleAuth();
     const calendar = google.calendar({ version: 'v3', auth });
     const now = new Date();
+    const end90d = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
 
-    const end30d = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-    const resp = await calendar.events.list({
-      calendarId: process.env.FLAT2VR_CALENDAR_ID,
-      timeMin: now.toISOString(),
-      timeMax: end30d.toISOString(),
-      singleEvents: true,
-      orderBy: 'startTime',
-      maxResults: 50,
-    });
+    // Fetch from both calendars in parallel
+    const calendarIds = [
+      { id: process.env.FLAT2VR_CALENDAR_ID, source: 'release' },
+      { id: process.env.MILESTONES_CALENDAR_ID, source: 'milestone' },
+    ].filter(c => c.id);
 
-    const releases = (resp.data.items || []).map(e => {
-      const isAllDay = !e.start?.dateTime;
-      // Clean up summary (remove synced prefixes like "🔄 ... :: ...")
-      let name = e.summary || 'Untitled';
-      if (name.includes(' :: ')) {
-        name = name.split(' :: ')[0].replace(/^🔄\s*/, '');
+    const results = await Promise.all(calendarIds.map(async ({ id, source }) => {
+      try {
+        const resp = await calendar.events.list({
+          calendarId: id,
+          timeMin: now.toISOString(),
+          timeMax: end90d.toISOString(),
+          singleEvents: true,
+          orderBy: 'startTime',
+          maxResults: 50,
+        });
+        return (resp.data.items || []).map(e => {
+          const isAllDay = !e.start?.dateTime;
+          let name = e.summary || 'Untitled';
+          if (name.includes(' :: ')) {
+            name = name.split(' :: ')[0].replace(/^🔄\s*/, '');
+          }
+          return {
+            name,
+            date: e.start?.dateTime || e.start?.date,
+            endDate: e.end?.dateTime || e.end?.date,
+            isAllDay,
+            htmlLink: e.htmlLink,
+            source,
+          };
+        });
+      } catch (err) {
+        console.error(`Calendar ${source} error:`, err.message);
+        return [];
       }
-      return {
-        name,
-        date: e.start?.dateTime || e.start?.date,
-        endDate: e.end?.dateTime || e.end?.date,
-        isAllDay,
-        htmlLink: e.htmlLink,
-      };
-    });
+    }));
+
+    // Merge and sort by date
+    const releases = results.flat().sort((a, b) => new Date(a.date) - new Date(b.date));
 
     res.json({ releases });
   } catch (err) {

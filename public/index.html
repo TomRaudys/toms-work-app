@@ -573,6 +573,17 @@
 
     .release-name:hover { color: #007aff; }
 
+    .release-source {
+      font-size: 9px;
+      font-weight: 600;
+      padding: 1px 5px;
+      border-radius: 3px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .release-source.release { background: rgba(255, 59, 48, 0.12); color: #d70015; }
+    .release-source.milestone { background: rgba(88, 86, 214, 0.12); color: #5856d6; }
+
     .release-countdown {
       font-size: 10px;
       color: #86868b;
@@ -801,13 +812,13 @@
       </div>
     </div>
 
-    <!-- Column 2, Row 3-4: Upcoming Releases -->
+    <!-- Column 2, Row 3-4: Upcoming Releases & Milestones -->
     <div class="card card-releases">
       <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🚀</span> Upcoming Releases</h2>
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🚀</span> Releases & Milestones</h2>
         <span class="badge" id="releases-badge">0</span>
       </div>
-      <div class="card-body" id="releases-list">
+      <div class="card-body scrollable" id="releases-list">
         <div class="loading">Loading releases...</div>
       </div>
     </div>
@@ -1239,10 +1250,14 @@
           else if (diffDays === 1) countdown = 'Tomorrow';
           else countdown = `In ${diffDays}d`;
 
+          const sourceLabel = r.source === 'milestone' ? 'milestone' : 'release';
+          const sourceTag = `<span class="release-source ${r.source || 'release'}">${sourceLabel}</span>`;
+
           return `
             <div class="release-item">
               <div class="release-date">${dateStr}</div>
               <a class="release-name" href="${r.htmlLink}" target="_blank">${r.name}</a>
+              ${sourceTag}
               <span class="release-countdown">${countdown}</span>
             </div>
           `;
