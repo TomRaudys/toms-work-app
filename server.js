@@ -406,10 +406,8 @@ let weeklySummaryCache = { data: null, sourceHash: null, lastFetch: 0 };
 
 function getWeekBounds() {
   const now = new Date();
-  const day = now.getDay();
-  const diffToMon = day === 0 ? -6 : 1 - day;
-  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon);
-  const end = new Date(start.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 5);
+  const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
   return { start, end };
 }
 
@@ -531,10 +529,33 @@ async function fetchGeminiNotes(weekStart) {
 function buildWeeklySummary(firefliesMeetings, geminiNotes) {
   const meetings = [];
 
-  // Build a set of Gemini meeting title keywords for dedup matching
-  const geminiTitles = new Set();
+  // Build a set of Fireflies meeting title keywords for dedup matching
+  const firefliesTitles = new Set();
 
-  // Process Gemini notes first (they take priority)
+  // Process Fireflies meetings first (they take priority)
+  for (const m of firefliesMeetings) {
+    const date = new Date(parseInt(m.date));
+    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const durationMins = Math.round(m.duration || 0);
+    const durationStr = durationMins >= 60
+      ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`
+      : `${durationMins}m`;
+
+    // Store normalised title keywords for dedup matching against Gemini
+    firefliesTitles.add(m.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim());
+
+    meetings.push({
+      source: 'fireflies',
+      title: m.title,
+      date: dateStr,
+      dateRaw: date.toISOString(),
+      duration: durationStr,
+      summary: m.summary?.short_summary || '',
+      overview: m.summary?.overview || '',
+    });
+  }
+
+  // Process Gemini notes — skip if Fireflies already has a transcript for the same meeting
   for (const note of geminiNotes) {
     const date = new Date(note.createdTime);
     const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
@@ -549,8 +570,15 @@ function buildWeeklySummary(firefliesMeetings, geminiNotes) {
     title = title.replace(/\s*-?\s*\d{4}\/\d{2}\/\d{2}\s+\d{2}:\d{2}\s+\w+\s*$/, '').trim();
 
     const finalTitle = title || note.name;
-    // Store normalised title keywords for dedup matching against Fireflies
-    geminiTitles.add(finalTitle.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim());
+
+    // Check if Fireflies already covers this meeting (fuzzy title match)
+    const gnNorm = finalTitle.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+    const gnWords = gnNorm.split(' ').filter(w => w.length > 2);
+    const hasDuplicate = [...firefliesTitles].some(ft => {
+      const matchCount = gnWords.filter(w => ft.includes(w)).length;
+      return matchCount >= Math.min(2, gnWords.length);
+    });
+    if (hasDuplicate) continue;
 
     meetings.push({
       source: 'gemini',
@@ -560,36 +588,6 @@ function buildWeeklySummary(firefliesMeetings, geminiNotes) {
       link: note.link,
       summary: '',
       content: note.content,
-    });
-  }
-
-  // Process Fireflies meetings — skip if Gemini already has a note for the same meeting
-  for (const m of firefliesMeetings) {
-    const date = new Date(parseInt(m.date));
-    const dateStr = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-    const durationMins = Math.round(m.duration || 0);
-    const durationStr = durationMins >= 60
-      ? `${Math.floor(durationMins / 60)}h ${durationMins % 60}m`
-      : `${durationMins}m`;
-
-    // Check if Gemini already covers this meeting (fuzzy title match)
-    const ffNorm = m.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-    const ffWords = ffNorm.split(' ').filter(w => w.length > 2);
-    const hasDuplicate = [...geminiTitles].some(gt => {
-      // Match if most significant words from Fireflies title appear in a Gemini title
-      const matchCount = ffWords.filter(w => gt.includes(w)).length;
-      return matchCount >= Math.min(2, ffWords.length);
-    });
-    if (hasDuplicate) continue;
-
-    meetings.push({
-      source: 'fireflies',
-      title: m.title,
-      date: dateStr,
-      dateRaw: date.toISOString(),
-      duration: durationStr,
-      summary: m.summary?.short_summary || '',
-      overview: m.summary?.overview || '',
     });
   }
 
