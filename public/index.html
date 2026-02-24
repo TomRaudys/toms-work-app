@@ -1242,13 +1242,8 @@
         container.innerHTML = data.releases.map(r => {
           // Format date
           let dateStr;
-          if (r.isAllDay) {
-            const d = new Date(r.date + 'T00:00:00');
-            dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          } else {
-            const d = new Date(r.date);
-            dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          }
+          const d = new Date(r.date);
+          dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           // Time until release
           const releaseDate = new Date(r.date);
           const diffMs = releaseDate - now;
