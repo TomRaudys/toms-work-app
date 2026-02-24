@@ -337,19 +337,20 @@ app.get('/api/releases', async (req, res) => {
     const calendar = google.calendar({ version: 'v3', auth });
     const now = new Date();
     const end90d = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
+    const end24mo = new Date(now.getFullYear() + 2, now.getMonth(), now.getDate());
 
-    // Fetch from both calendars in parallel
+    // Fetch from both calendars in parallel (milestones look 24 months ahead)
     const calendarIds = [
-      { id: process.env.FLAT2VR_CALENDAR_ID, source: 'release' },
-      { id: process.env.MILESTONES_CALENDAR_ID, source: 'milestone' },
+      { id: process.env.FLAT2VR_CALENDAR_ID, source: 'release', endDate: end90d },
+      { id: process.env.MILESTONES_CALENDAR_ID, source: 'milestone', endDate: end24mo },
     ].filter(c => c.id);
 
-    const results = await Promise.all(calendarIds.map(async ({ id, source }) => {
+    const results = await Promise.all(calendarIds.map(async ({ id, source, endDate: calEnd }) => {
       try {
         const resp = await calendar.events.list({
           calendarId: id,
           timeMin: now.toISOString(),
-          timeMax: end90d.toISOString(),
+          timeMax: calEnd.toISOString(),
           singleEvents: true,
           orderBy: 'startTime',
           maxResults: 50,
