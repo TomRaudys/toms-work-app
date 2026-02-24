@@ -1197,9 +1197,16 @@
           invitesContainer.innerHTML = data.pendingInvites.map(e => {
             const invDate = new Date(e.start);
             const now = new Date();
-            const diffDays = Math.ceil((invDate - now) / (1000 * 60 * 60 * 24));
+            const diffMs = invDate - now;
+            const diffHours = diffMs / (1000 * 60 * 60);
+            const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
             let countdown = '';
-            if (diffDays <= 0) countdown = 'Today';
+            if (diffMs <= 0) countdown = 'Today';
+            else if (diffHours < 24) {
+              const h = Math.floor(diffHours);
+              const m = Math.round((diffHours - h) * 60);
+              countdown = h > 0 ? `in ${h}h ${m}m` : `in ${m}m`;
+            }
             else if (diffDays === 1) countdown = 'Tomorrow';
             else countdown = `in ${diffDays}d`;
             return `
@@ -1242,13 +1249,23 @@
             const d = new Date(r.date);
             dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
           }
-          // Days until
+          // Time until release
           const releaseDate = new Date(r.date);
-          const diffDays = Math.ceil((releaseDate - now) / (1000 * 60 * 60 * 24));
+          const diffMs = releaseDate - now;
+          const diffHours = diffMs / (1000 * 60 * 60);
+          const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
           let countdown = '';
-          if (diffDays === 0) countdown = 'Today';
-          else if (diffDays === 1) countdown = 'Tomorrow';
-          else countdown = `In ${diffDays}d`;
+          if (diffMs <= 0) {
+            countdown = 'Today';
+          } else if (diffHours < 24) {
+            const h = Math.floor(diffHours);
+            const m = Math.round((diffHours - h) * 60);
+            countdown = h > 0 ? `In ${h}h ${m}m` : `In ${m}m`;
+          } else if (diffDays === 1) {
+            countdown = 'Tomorrow';
+          } else {
+            countdown = `In ${diffDays}d`;
+          }
 
           const sourceLabel = r.source === 'milestone' ? 'milestone' : 'release';
           const sourceTag = `<span class="release-source ${r.source || 'release'}">${sourceLabel}</span>`;

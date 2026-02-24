@@ -353,6 +353,7 @@ app.get('/api/releases', async (req, res) => {
           singleEvents: true,
           orderBy: 'startTime',
           maxResults: 50,
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         });
         return (resp.data.items || []).map(e => {
           const isAllDay = !e.start?.dateTime;
@@ -360,10 +361,20 @@ app.get('/api/releases', async (req, res) => {
           if (name.includes(' :: ')) {
             name = name.split(' :: ')[0].replace(/^🔄\s*/, '');
           }
+          // For all-day events, normalise the bare date to a full ISO timestamp
+          // so the frontend always gets a consistent format
+          let date = e.start?.dateTime || e.start?.date;
+          let endDate = e.end?.dateTime || e.end?.date;
+          if (isAllDay && date && date.length === 10) {
+            date = date + 'T00:00:00';
+          }
+          if (isAllDay && endDate && endDate.length === 10) {
+            endDate = endDate + 'T00:00:00';
+          }
           return {
             name,
-            date: e.start?.dateTime || e.start?.date,
-            endDate: e.end?.dateTime || e.end?.date,
+            date,
+            endDate,
             isAllDay,
             htmlLink: e.htmlLink,
             source,
