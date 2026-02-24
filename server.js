@@ -292,35 +292,47 @@ app.get('/api/calendar/today', async (req, res) => {
       meetingMinutes += (end - start) / 60000;
     }
 
-    // Weekly meeting stats: Monday to Sunday of current week
+    // Weekly meeting stats: Monday to Sunday of current week + last week
     const day = now.getDay(); // 0=Sun, 1=Mon ...
     const diffToMon = day === 0 ? -6 : 1 - day;
     const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon);
     const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-    const weekResp = await calendar.events.list({
-      calendarId: 'primary',
-      timeMin: startOfWeek.toISOString(),
-      timeMax: endOfWeek.toISOString(),
-      singleEvents: true,
-      orderBy: 'startTime',
-      maxResults: 250,
-    });
+    // Fetch both weeks in parallel
+    const [weekResp, lastWeekResp] = await Promise.all([
+      calendar.events.list({
+        calendarId: 'primary',
+        timeMin: startOfWeek.toISOString(),
+        timeMax: endOfWeek.toISOString(),
+        singleEvents: true, orderBy: 'startTime', maxResults: 250,
+      }),
+      calendar.events.list({
+        calendarId: 'primary',
+        timeMin: startOfLastWeek.toISOString(),
+        timeMax: startOfWeek.toISOString(),
+        singleEvents: true, orderBy: 'startTime', maxResults: 250,
+      }),
+    ]);
 
-    let weeklyMeetingMinutes = 0;
-    for (const raw of (weekResp.data.items || [])) {
-      const et = raw.eventType || 'default';
-      if (et === 'outOfOffice' || et === 'focusTime' || et === 'workingLocation') continue;
-      if (!raw.start?.dateTime) continue;
-      const myResponse = raw.attendees?.find(a => a.self);
-      const status = myResponse ? myResponse.responseStatus : 'accepted';
-      if (status !== 'accepted') continue;
-      const start = new Date(raw.start.dateTime);
-      const end = new Date(raw.end.dateTime);
-      weeklyMeetingMinutes += (end - start) / 60000;
+    function calcAcceptedMeetingMins(items) {
+      let mins = 0;
+      for (const raw of (items || [])) {
+        const et = raw.eventType || 'default';
+        if (et === 'outOfOffice' || et === 'focusTime' || et === 'workingLocation') continue;
+        if (!raw.start?.dateTime) continue;
+        const myResponse = raw.attendees?.find(a => a.self);
+        const status = myResponse ? myResponse.responseStatus : 'accepted';
+        if (status !== 'accepted') continue;
+        mins += (new Date(raw.end.dateTime) - new Date(raw.start.dateTime)) / 60000;
+      }
+      return mins;
     }
 
-    res.json({ events, pendingInvites, meetingCount, meetingMinutes, weeklyMeetingMinutes });
+    const weeklyMeetingMinutes = calcAcceptedMeetingMins(weekResp.data.items);
+    const lastWeekMeetingMinutes = calcAcceptedMeetingMins(lastWeekResp.data.items);
+
+    res.json({ events, pendingInvites, meetingCount, meetingMinutes, weeklyMeetingMinutes, lastWeekMeetingMinutes });
   } catch (err) {
     console.error('Calendar error:', err.message);
     res.json({ error: err.message });

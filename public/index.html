@@ -804,11 +804,16 @@
             <tr>
               <td class="summary-label">⏱️ Meeting time today</td>
               <td class="summary-value" id="stat-meeting-time">-</td>
-              <td class="summary-label">📊 Week meeting time</td>
-              <td class="summary-value" id="stat-weekly-meeting-time">-</td>
+              <td></td><td></td>
             </tr>
           </tbody>
         </table>
+        <hr style="border: none; border-top: 1px solid rgba(0,0,0,0.08); margin: 6px 0;">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+          <span style="color: #6e6e73;">📊 Week meeting time</span>
+          <span id="stat-weekly-meeting-time" style="font-weight: 700; color: #1d1d1f;">-</span>
+          <span id="stat-week-change" style="font-size: 11px; font-weight: 600;"></span>
+        </div>
       </div>
     </div>
 
@@ -1177,6 +1182,7 @@
 
         // Weekly meeting time
         const weekMins = data.weeklyMeetingMinutes || 0;
+        const lastWeekMins = data.lastWeekMeetingMinutes || 0;
         const weekEl = document.getElementById('stat-weekly-meeting-time');
         if (weekMins >= 60) {
           const wh = Math.floor(weekMins / 60);
@@ -1189,6 +1195,24 @@
         if (weekMins >= 1200) {
           weekEl.textContent = '⚠️ ' + weekEl.textContent;
           weekEl.style.color = '#ff3b30';
+        }
+        // % change vs last week
+        const changeEl = document.getElementById('stat-week-change');
+        if (lastWeekMins > 0) {
+          const pct = Math.round(((weekMins - lastWeekMins) / lastWeekMins) * 100);
+          if (pct > 0) {
+            changeEl.textContent = `▲ ${pct}% vs last week`;
+            changeEl.style.color = '#ff3b30';
+          } else if (pct < 0) {
+            changeEl.textContent = `▼ ${Math.abs(pct)}% vs last week`;
+            changeEl.style.color = '#34c759';
+          } else {
+            changeEl.textContent = `— same as last week`;
+            changeEl.style.color = '#6e6e73';
+          }
+        } else if (weekMins > 0) {
+          changeEl.textContent = 'no meetings last week';
+          changeEl.style.color = '#6e6e73';
         }
 
         if (!data.pendingInvites || data.pendingInvites.length === 0) {
