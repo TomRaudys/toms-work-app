@@ -201,7 +201,7 @@
     .card-highlevel  { grid-column: 3; grid-row: 3 / 6; }
 
     /* Compact summary table */
-    .card-summary .card-body { padding: 6px 16px; overflow: hidden; }
+    .card-summary .card-body { padding: 6px 16px; overflow: hidden; display: flex; flex-direction: column; }
 
     .summary-table {
       width: 100%;
@@ -809,7 +809,7 @@
           </tbody>
         </table>
         <hr style="border: none; border-top: 1px solid rgba(0,0,0,0.08); margin: 6px 0;">
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+        <div style="display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 13px; flex: 1;">
           <span style="color: #6e6e73; font-weight: 500;">📊 Week meeting time</span>
           <span id="stat-weekly-meeting-time" style="font-weight: 700; color: #1d1d1f; font-size: 13px;">-</span>
           <span id="stat-week-change" style="font-size: 13px; font-weight: 600;"></span>
