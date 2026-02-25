@@ -931,9 +931,8 @@
         const time = timeParts[0];
         const period = timeParts[1] || '';
         const dateStr = now.toLocaleDateString('en-US', dateOpts);
-        // Use custom label for Amsterdam (CET), auto-detect for others
-        const tzAbbr = c.label ? 'CET' : now.toLocaleString('en-US', { timeZone: c.tz, timeZoneName: 'short' }).split(' ').pop();
-        const tzFull = c.label || '';
+        // Timezone abbreviation — use custom label if set, otherwise auto-detect
+        const tzAbbr = c.label || now.toLocaleString('en-US', { timeZone: c.tz, timeZoneName: 'short' }).split(' ').pop();
 
         // Get numeric h/m/s for analog clock
         const localParts = now.toLocaleString('en-US', { timeZone: c.tz, hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false }).split(':');
@@ -948,7 +947,7 @@
             <div class="clock-info">
               <div class="clock-city-row">
                 <span class="clock-city">${c.city}</span>
-                <span class="clock-tz">${tzFull ? tzFull : '(' + tzAbbr + ')'}</span>
+                <span class="clock-tz">(${tzAbbr})</span>
                 <span class="clock-tod">${emoji}</span>
               </div>
               <div class="clock-digital">
