@@ -827,7 +827,6 @@
     <div class="card card-releases">
       <div class="card-header">
         <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🚀</span> Releases & Milestones</h2>
-        <span class="badge" id="releases-badge">0</span>
       </div>
       <div class="card-body scrollable" id="releases-list">
         <div class="loading">Loading releases...</div>
@@ -838,7 +837,6 @@
     <div class="card card-highlevel">
       <div class="card-header">
         <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🎯</span> Studio High Level ClickUp</h2>
-        <span class="badge" id="highlevel-badge">0</span>
       </div>
       <div class="card-body scrollable" id="highlevel-list">
         <div class="loading">Loading high level items...</div>
@@ -849,7 +847,6 @@
     <div class="card card-clickup">
       <div class="card-header">
         <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">📋</span> Meeting Notes</h2>
-        <span class="badge" id="weekly-badge">0</span>
       </div>
       <div class="card-body scrollable" id="weekly-summary">
         <div class="loading">Loading meeting notes...</div>
@@ -1033,11 +1030,8 @@
 
       if (!data.meetings || data.meetings.length === 0) {
         container.innerHTML = '<div class="card-body empty">No meeting notes this week yet</div>';
-        document.getElementById('weekly-badge').textContent = '0';
         return;
       }
-
-      document.getElementById('weekly-badge').textContent = data.meetingCount || 0;
 
       let html = '';
 
@@ -1304,7 +1298,6 @@
             </div>
           `;
         }).join('');
-        document.getElementById('releases-badge').textContent = data.releases.length;
       }
     }
 
@@ -1355,7 +1348,6 @@
           html += `</div>`;
         });
         container.innerHTML = html;
-        document.getElementById('highlevel-badge').textContent = data.tasks.length;
       }
     }
 
