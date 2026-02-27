@@ -449,6 +449,7 @@
     .event-item:last-child { border-bottom: none; }
 
     .event-item.past { opacity: 0.4; }
+    .event-item.declined { opacity: 0.35; text-decoration: line-through; text-decoration-color: rgba(0,0,0,0.2); }
 
     .now-line {
       position: relative;
@@ -1192,7 +1193,7 @@
             // Link: meeting link if available, otherwise calendar event
             const eventLink = e.meetingLink || e.htmlLink;
             html += `
-              <div class="event-item${isPast ? ' past' : ''}">
+              <div class="event-item${isPast ? ' past' : ''}${responseClass === 'declined' ? ' declined' : ''}">
                 <div class="event-time">${timeStr}</div>
                 <div style="flex:1;min-width:0">
                   <a class="event-name" href="${eventLink}" target="_blank">${e.summary || 'No title'}</a>
