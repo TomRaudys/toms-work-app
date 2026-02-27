@@ -448,6 +448,33 @@
 
     .event-item:last-child { border-bottom: none; }
 
+    .event-item.past { opacity: 0.4; }
+
+    .now-line {
+      position: relative;
+      display: flex;
+      align-items: center;
+      height: 0;
+      margin: 2px 0;
+      z-index: 0;
+    }
+    .now-line::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      border-top: 2px solid #ff3b30;
+    }
+    .now-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #ff3b30;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 1;
+    }
+
     .event-time {
       font-size: 13px;
       font-weight: 600;
@@ -1099,9 +1126,30 @@
         if (!data.events || data.events.length === 0) {
           eventsContainer.innerHTML = '<div class="card-body empty">No events today</div>';
         } else {
-          eventsContainer.innerHTML = data.events.map(e => {
+          const now = new Date();
+          let nowLineInserted = false;
+          let html = '';
+
+          for (const e of data.events) {
             const timeStr = e.isAllDay ? 'All day' : formatTime(e.start);
             const responseClass = e.responseStatus === 'needsAction' ? 'pending' : (e.responseStatus || 'accepted');
+
+            // Determine if event is in the past
+            const eventEnd = e.end ? new Date(e.end) : (e.start ? new Date(e.start) : null);
+            const eventStart = e.start ? new Date(e.start) : null;
+            const isPast = eventEnd && eventEnd < now;
+
+            // Insert now-line before the first future/current event
+            if (!nowLineInserted && !e.isAllDay && eventStart && eventStart >= now) {
+              html += '<div class="now-line"><div class="now-dot"></div></div>';
+              nowLineInserted = true;
+            }
+            // Also insert if we're currently inside this event
+            if (!nowLineInserted && !e.isAllDay && eventStart && eventEnd && eventStart <= now && eventEnd >= now) {
+              html += '<div class="now-line"><div class="now-dot"></div></div>';
+              nowLineInserted = true;
+            }
+
             // Calculate duration
             let durationHtml = '';
             if (!e.isAllDay && e.start && e.end) {
@@ -1143,8 +1191,8 @@
             }
             // Link: meeting link if available, otherwise calendar event
             const eventLink = e.meetingLink || e.htmlLink;
-            return `
-              <div class="event-item">
+            html += `
+              <div class="event-item${isPast ? ' past' : ''}">
                 <div class="event-time">${timeStr}</div>
                 <div style="flex:1;min-width:0">
                   <a class="event-name" href="${eventLink}" target="_blank">${e.summary || 'No title'}</a>
@@ -1157,7 +1205,14 @@
                 </div>
               </div>
             `;
-          }).join('');
+          }
+
+          // If all events are past, put the line at the bottom
+          if (!nowLineInserted) {
+            html += '<div class="now-line"><div class="now-dot"></div></div>';
+          }
+
+          eventsContainer.innerHTML = html;
         }
 
         document.getElementById('calendar-badge').textContent = (data.events || []).length;
