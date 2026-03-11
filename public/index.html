@@ -601,7 +601,7 @@
 
     .release-name:hover { color: #007aff; }
 
-    .release-source {
+    .release-status {
       font-size: 9px;
       font-weight: 600;
       padding: 1px 5px;
@@ -609,8 +609,13 @@
       white-space: nowrap;
       flex-shrink: 0;
     }
-    .release-source.release { background: rgba(255, 59, 48, 0.12); color: #d70015; }
-    .release-source.milestone { background: rgba(88, 86, 214, 0.12); color: #5856d6; }
+
+    .release-platforms {
+      font-size: 9px;
+      color: #86868b;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
 
     .release-countdown {
       font-size: 10px;
@@ -845,10 +850,10 @@
       </div>
     </div>
 
-    <!-- Column 2, Row 3-4: Upcoming Releases & Milestones -->
+    <!-- Column 3, Row 2: Upcoming Releases -->
     <div class="card card-releases">
       <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🚀</span> Releases & Milestones</h2>
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🚀</span> Upcoming Releases</h2>
       </div>
       <div class="card-body scrollable" id="releases-list">
         <div class="loading">Loading releases...</div>
@@ -1313,37 +1318,42 @@
       } else {
         const now = new Date();
         container.innerHTML = data.releases.map(r => {
-          // Format date
-          let dateStr;
-          const d = new Date(r.date);
-          dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-          // Time until release
-          const releaseDate = new Date(r.date);
-          const diffMs = releaseDate - now;
-          const diffHours = diffMs / (1000 * 60 * 60);
-          const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+          // Format date or show TBD
+          let dateStr = 'TBD';
           let countdown = '';
-          if (diffMs <= 0) {
-            countdown = 'Today';
-          } else if (diffHours < 24) {
-            const h = Math.floor(diffHours);
-            const m = Math.round((diffHours - h) * 60);
-            countdown = h > 0 ? `In ${h}h ${m}m` : `In ${m}m`;
-          } else if (diffDays === 1) {
-            countdown = 'Tomorrow';
-          } else {
-            countdown = `In ${diffDays}d`;
+          if (r.date) {
+            const d = new Date(r.date);
+            dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            const diffMs = d - now;
+            const diffHours = diffMs / (1000 * 60 * 60);
+            const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+            if (diffMs <= 0) {
+              countdown = 'Today';
+            } else if (diffHours < 24) {
+              const h = Math.floor(diffHours);
+              const m = Math.round((diffHours - h) * 60);
+              countdown = h > 0 ? `In ${h}h ${m}m` : `In ${m}m`;
+            } else if (diffDays === 1) {
+              countdown = 'Tomorrow';
+            } else {
+              countdown = `In ${diffDays}d`;
+            }
           }
 
-          const sourceLabel = r.source === 'milestone' ? 'milestone' : 'release';
-          const sourceTag = `<span class="release-source ${r.source || 'release'}">${sourceLabel}</span>`;
+          const statusTag = r.status
+            ? `<span class="release-status" style="background: ${r.statusColor}22; color: ${r.statusColor}">${r.status}</span>`
+            : '';
+          const platformsStr = r.platforms && r.platforms.length > 0
+            ? `<span class="release-platforms">${r.platforms.join(', ')}</span>`
+            : '';
 
           return `
             <div class="release-item">
               <div class="release-date">${dateStr}</div>
-              <a class="release-name" href="${r.htmlLink}" target="_blank">${r.name}</a>
-              ${sourceTag}
-              <span class="release-countdown">${countdown}</span>
+              <a class="release-name" href="${r.url}" target="_blank">${r.name}</a>
+              ${statusTag}
+              ${platformsStr}
+              ${countdown ? `<span class="release-countdown">${countdown}</span>` : ''}
             </div>
           `;
         }).join('');

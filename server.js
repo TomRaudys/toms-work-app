@@ -339,68 +339,49 @@ app.get('/api/calendar/today', async (req, res) => {
   }
 });
 
-// --- Upcoming Releases & Milestones ---
+// --- Upcoming Releases (from ClickUp) ---
 app.get('/api/releases', async (req, res) => {
   try {
-    if (!process.env.GOOGLE_CLIENT_ID) {
-      return res.json({ error: 'No Google credentials configured' });
-    }
-    const auth = getGoogleAuth();
-    const calendar = google.calendar({ version: 'v3', auth });
-    const now = new Date();
-    const end90d = new Date(now.getTime() + 90 * 24 * 60 * 60 * 1000);
-    const end24mo = new Date(now.getFullYear() + 2, now.getMonth(), now.getDate());
+    const token = process.env.CLICKUP_API_TOKEN;
+    const listId = '901113218727'; // Releases list in ALL - Internal Company
+    if (!token) return res.json({ error: 'No ClickUp token configured' });
 
-    // Fetch from both calendars in parallel (milestones look 24 months ahead)
-    const calendarIds = [
-      { id: process.env.FLAT2VR_CALENDAR_ID, source: 'release', endDate: end90d },
-      { id: process.env.MILESTONES_CALENDAR_ID, source: 'milestone', endDate: end24mo },
-    ].filter(c => c.id);
+    const resp = await fetch(
+      `https://api.clickup.com/api/v2/list/${listId}/task?include_closed=false&subtasks=false&order_by=due_date`,
+      { headers: { Authorization: token } }
+    );
+    const data = await resp.json();
 
-    const results = await Promise.all(calendarIds.map(async ({ id, source, endDate: calEnd }) => {
-      try {
-        const resp = await calendar.events.list({
-          calendarId: id,
-          timeMin: now.toISOString(),
-          timeMax: calEnd.toISOString(),
-          singleEvents: true,
-          orderBy: 'startTime',
-          maxResults: 50,
-          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        });
-        return (resp.data.items || []).map(e => {
-          const isAllDay = !e.start?.dateTime;
-          let name = e.summary || 'Untitled';
-          if (name.includes(' :: ')) {
-            name = name.split(' :: ')[0].replace(/^🔄\s*/, '');
-          }
-          // For all-day events, normalise the bare date to a full ISO timestamp
-          // so the frontend always gets a consistent format
-          let date = e.start?.dateTime || e.start?.date;
-          let endDate = e.end?.dateTime || e.end?.date;
-          if (isAllDay && date && date.length === 10) {
-            date = date + 'T00:00:00';
-          }
-          if (isAllDay && endDate && endDate.length === 10) {
-            endDate = endDate + 'T00:00:00';
-          }
-          return {
-            name,
-            date,
-            endDate,
-            isAllDay,
-            htmlLink: e.htmlLink,
-            source,
-          };
-        });
-      } catch (err) {
-        console.error(`Calendar ${source} error:`, err.message);
-        return [];
-      }
-    }));
+    const releases = (data.tasks || [])
+      .filter(t => t.status?.status !== 'launched' && t.status?.status !== 'archive')
+      .map(t => {
+        // Extract platforms from custom field
+        const platformsField = (t.custom_fields || []).find(f => f.name === 'Platforms');
+        let platforms = [];
+        if (platformsField && platformsField.value && platformsField.type_config?.options) {
+          const selected = Array.isArray(platformsField.value) ? platformsField.value : [];
+          platforms = selected.map(id => {
+            const opt = platformsField.type_config.options.find(o => o.id === id);
+            return opt ? opt.label : null;
+          }).filter(Boolean);
+        }
 
-    // Merge and sort by date
-    const releases = results.flat().sort((a, b) => new Date(a.date) - new Date(b.date));
+        return {
+          name: t.name,
+          date: t.due_date ? new Date(parseInt(t.due_date)).toISOString() : null,
+          status: t.status?.status,
+          statusColor: t.status?.color,
+          assignees: (t.assignees || []).map(a => a.username),
+          platforms,
+          url: t.url,
+        };
+      })
+      .sort((a, b) => {
+        if (!a.date && !b.date) return 0;
+        if (!a.date) return 1;
+        if (!b.date) return -1;
+        return new Date(a.date) - new Date(b.date);
+      });
 
     res.json({ releases });
   } catch (err) {
