@@ -474,8 +474,9 @@ async function fetchFirefliesMeetings(weekStart, weekEnd) {
       if (d < weekStart || d >= weekEnd) return false;
       // Check if I'm organizer or participant
       const isOrganizer = t.organizer_email === myEmail;
+      const myName = (process.env.MY_NAME || '').toLowerCase();
       const isParticipant = (t.participants || []).some(p =>
-        p === myEmail || (typeof p === 'string' && p.toLowerCase().includes('tom'))
+        p === myEmail || (myName && typeof p === 'string' && p.toLowerCase().includes(myName))
       );
       return isOrganizer || isParticipant;
     });
