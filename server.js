@@ -343,7 +343,7 @@ app.get('/api/calendar/today', async (req, res) => {
 app.get('/api/releases', async (req, res) => {
   try {
     const token = process.env.CLICKUP_API_TOKEN;
-    const listId = '901113218727'; // Releases list in ALL - Internal Company
+    const listId = process.env.CLICKUP_RELEASES_LIST_ID;
     if (!token) return res.json({ error: 'No ClickUp token configured' });
 
     const resp = await fetch(
@@ -467,7 +467,7 @@ async function fetchFirefliesMeetings(weekStart, weekEnd) {
       return [];
     }
     const transcripts = json.data?.transcripts || [];
-    const myEmail = 'tom@flat2vr.com';
+    const myEmail = process.env.MY_EMAIL;
     // Filter to this week + only meetings I attended/was invited to
     return transcripts.filter(t => {
       const d = new Date(parseInt(t.date));
