@@ -239,8 +239,15 @@ app.get('/api/calendar/today', async (req, res) => {
         if (video) meetingLink = video.uri;
       }
 
+      // Individual attendee details for tooltip
+      const attendees = (e.attendees || []).filter(a => !a.self).map(a => ({
+        name: a.displayName || a.email,
+        status: a.responseStatus,
+      }));
+
       return {
         summary: e.summary,
+        description: e.description || null,
         start: e.start?.dateTime || e.start?.date,
         end: e.end?.dateTime || e.end?.date,
         status: e.status,
@@ -249,6 +256,7 @@ app.get('/api/calendar/today', async (req, res) => {
         meetingLink,
         isAllDay: !e.start?.dateTime,
         attendeeCounts,
+        attendees,
         tag,
         eventType,
       };
