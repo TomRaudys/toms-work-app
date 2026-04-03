@@ -182,7 +182,7 @@
     .grid {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: auto minmax(0, 240px) 1fr 1fr minmax(0, 20vh);
+      grid-template-rows: auto minmax(0, 340px) 1fr 1fr minmax(0, 20vh);
       gap: 16px;
       padding: 16px 32px;
       max-width: 1600px;
@@ -636,8 +636,8 @@
     }
 
     .weekly-meeting-block {
-      margin-bottom: 14px;
-      padding-bottom: 12px;
+      margin-bottom: 8px;
+      padding-bottom: 8px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.06);
     }
 
@@ -681,8 +681,12 @@
     .weekly-meeting-summary {
       font-size: 12px;
       color: #3c3c43;
-      line-height: 1.5;
-      margin-top: 4px;
+      line-height: 1.4;
+      margin-top: 3px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
     }
 
     .weekly-section-label {
@@ -844,10 +848,13 @@
           </tbody>
         </table>
         <hr style="border: none; border-top: 1px solid rgba(0,0,0,0.08); margin: 6px 0;">
-        <div style="display: flex; align-items: center; gap: 8px; font-size: 13px; flex: 1;">
-          <span style="color: #6e6e73; font-weight: 500;">📊 Week meeting time</span>
-          <span id="stat-weekly-meeting-time" style="font-weight: 700; color: #1d1d1f; font-size: 13px;">-</span>
-          <span id="stat-week-change" style="font-size: 13px; font-weight: 600;"></span>
+        <div id="weekly-meeting-section" style="font-size: 12px;">
+          <div id="weekly-chart" style="padding-top: 4px;"></div>
+          <div style="display: flex; justify-content: center; align-items: baseline; gap: 8px; margin-top: 20px;">
+            <span style="color: #6e6e73; font-weight: 500; font-size: 13px;">📊 Meeting time this week</span>
+            <span id="stat-weekly-meeting-time" style="font-weight: 700; color: #1d1d1f; font-size: 13px;">-</span>
+            <span id="stat-week-change" style="font-size: 13px; font-weight: 600;"></span>
+          </div>
         </div>
       </div>
     </div>
@@ -1072,11 +1079,11 @@
         // Build summary text - for fireflies use short_summary, for gemini extract key lines
         let summaryText = '';
         if (m.source === 'fireflies' && m.summary) {
-          summaryText = m.summary.length > 250 ? m.summary.substring(0, 250) + '...' : m.summary;
+          summaryText = m.summary.length > 150 ? m.summary.substring(0, 150) + '...' : m.summary;
         } else if (m.source === 'gemini' && m.content) {
           const lines = m.content.split('\n').filter(l => l.trim() && l.trim().length > 10);
-          summaryText = lines.slice(0, 4).join(' ').substring(0, 250);
-          if (summaryText.length >= 250) summaryText += '...';
+          summaryText = lines.slice(0, 2).join(' ').substring(0, 150);
+          if (summaryText.length >= 150) summaryText += '...';
         }
 
         html += `
@@ -1242,14 +1249,17 @@
         const weekMins = data.weeklyMeetingMinutes || 0;
         const lastWeekMins = data.lastWeekMeetingMinutes || 0;
         const weekEl = document.getElementById('stat-weekly-meeting-time');
-        if (weekMins >= 60) {
-          const wh = Math.floor(weekMins / 60);
-          const wm = Math.round(weekMins % 60);
-          weekEl.textContent = `${wh}h ${wm > 0 ? wm + 'm' : ''}`.trim();
-        } else {
-          weekEl.textContent = `${Math.round(weekMins)}m`;
+
+        function fmtMins(m) {
+          if (m >= 60) {
+            const h = Math.floor(m / 60);
+            const r = Math.round(m % 60);
+            return `${h}h ${r > 0 ? r + 'm' : ''}`.trim();
+          }
+          return `${Math.round(m)}m`;
         }
-        // Warning if over 20 hours
+
+        weekEl.textContent = fmtMins(weekMins);
         if (weekMins >= 1200) {
           weekEl.textContent = '⚠️ ' + weekEl.textContent;
           weekEl.style.color = '#ff3b30';
@@ -1271,6 +1281,53 @@
         } else if (weekMins > 0) {
           changeEl.textContent = 'no meetings last week';
           changeEl.style.color = '#6e6e73';
+        }
+
+        // Sparkline chart (6 past + current + next)
+        const breakdown = data.weeklyBreakdown || [];
+        const chartEl = document.getElementById('weekly-chart');
+        const chartWeeks = breakdown;
+        if (chartWeeks.length > 1) {
+          const maxMins = Math.max(...chartWeeks.map(w => w.minutes), 60);
+          const svgW = 300, svgH = 70, padX = 24, padTop = 16, padBot = 22;
+          const plotW = svgW - padX * 2, plotH = svgH - padTop - padBot;
+          const points = chartWeeks.map((w, i) => {
+            const x = padX + (i / (chartWeeks.length - 1)) * plotW;
+            const y = padTop + plotH - (w.minutes / maxMins) * plotH;
+            return { x, y, w };
+          });
+          // Split into solid (past+current) and dashed (current→next) paths
+          const nextIdx = points.findIndex(p => p.w.isNext);
+          const solidPoints = nextIdx > 0 ? points.slice(0, nextIdx) : points;
+          const solidPath = solidPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+          const fullPath = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+          const areaPath = fullPath + ` L${points[points.length-1].x},${svgH - padBot} L${points[0].x},${svgH - padBot} Z`;
+
+          let svg = `<svg width="100%" viewBox="0 0 ${svgW} ${svgH}" style="overflow:visible">`;
+          // Gradient fill under line
+          svg += `<defs><linearGradient id="sparkFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#007aff" stop-opacity="0.15"/><stop offset="100%" stop-color="#007aff" stop-opacity="0.02"/></linearGradient></defs>`;
+          svg += `<path d="${areaPath}" fill="url(#sparkFill)"/>`;
+          svg += `<path d="${solidPath}" fill="none" stroke="#007aff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+          if (nextIdx > 0) {
+            const dashedPath = `M${points[nextIdx-1].x},${points[nextIdx-1].y} L${points[nextIdx].x},${points[nextIdx].y}`;
+            svg += `<path d="${dashedPath}" fill="none" stroke="#007aff" stroke-width="1.5" stroke-dasharray="4,3" stroke-linecap="round" opacity="0.5"/>`;
+          }
+          // Dots + labels
+          points.forEach(p => {
+            const isCurrent = p.w.isCurrent;
+            const isNext = p.w.isNext;
+            const r = isCurrent ? 4 : isNext ? 3 : 2.5;
+            const fill = isCurrent ? '#007aff' : isNext ? '#fff' : 'rgba(0,122,255,0.5)';
+            const stroke = isNext ? '#007aff' : '#fff';
+            const dashAttr = isNext ? ' stroke-dasharray="2,2"' : '';
+            svg += `<circle cx="${p.x}" cy="${p.y}" r="${r}" fill="${fill}" stroke="${stroke}" stroke-width="1.5"${dashAttr}/>`;
+            const labelColor = isCurrent ? '#007aff' : isNext ? '#a0a0a5' : '#86868b';
+            svg += `<text x="${p.x}" y="${svgH}" text-anchor="middle" font-size="8" fill="${labelColor}">${p.w.label}</text>`;
+            const valColor = isCurrent ? '#007aff' : isNext ? '#a0a0a5' : '#6e6e73';
+            svg += `<text x="${p.x}" y="${p.y - 6}" text-anchor="middle" font-size="8" font-weight="${isCurrent ? '700' : '400'}" fill="${valColor}">${fmtMins(p.w.minutes)}</text>`;
+          });
+          svg += '</svg>';
+          chartEl.innerHTML = svg;
         }
 
         if (!data.pendingInvites || data.pendingInvites.length === 0) {

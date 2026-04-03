@@ -300,28 +300,24 @@ app.get('/api/calendar/today', async (req, res) => {
       meetingMinutes += (end - start) / 60000;
     }
 
-    // Weekly meeting stats: Monday to Sunday of current week + last week
+    // Weekly meeting stats: 6 past weeks + current week + next week
     const day = now.getDay(); // 0=Sun, 1=Mon ...
     const diffToMon = day === 0 ? -6 : 1 - day;
     const startOfWeek = new Date(now.getFullYear(), now.getMonth(), now.getDate() + diffToMon);
-    const endOfWeek = new Date(startOfWeek.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const startOfLastWeek = new Date(startOfWeek.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
-    // Fetch both weeks in parallel
-    const [weekResp, lastWeekResp] = await Promise.all([
-      calendar.events.list({
-        calendarId: 'primary',
-        timeMin: startOfWeek.toISOString(),
-        timeMax: endOfWeek.toISOString(),
-        singleEvents: true, orderBy: 'startTime', maxResults: 250,
-      }),
-      calendar.events.list({
-        calendarId: 'primary',
-        timeMin: startOfLastWeek.toISOString(),
-        timeMax: startOfWeek.toISOString(),
-        singleEvents: true, orderBy: 'startTime', maxResults: 250,
-      }),
-    ]);
+    // Build week ranges: 5 weeks ago through next week (8 weeks total)
+    const weekStarts = [];
+    for (let i = -5; i <= 2; i++) {
+      weekStarts.push(new Date(startOfWeek.getTime() + i * WEEK_MS));
+    }
+    // Fetch entire range in one call
+    const allWeeksResp = await calendar.events.list({
+      calendarId: 'primary',
+      timeMin: weekStarts[0].toISOString(),
+      timeMax: weekStarts[weekStarts.length - 1].toISOString(),
+      singleEvents: true, orderBy: 'startTime', maxResults: 2500,
+    });
 
     function calcAcceptedMeetingMins(items) {
       let mins = 0;
@@ -337,10 +333,30 @@ app.get('/api/calendar/today', async (req, res) => {
       return mins;
     }
 
-    const weeklyMeetingMinutes = calcAcceptedMeetingMins(weekResp.data.items);
-    const lastWeekMeetingMinutes = calcAcceptedMeetingMins(lastWeekResp.data.items);
+    // Bucket events into weeks
+    const allItems = allWeeksResp.data.items || [];
+    const weeklyBreakdown = [];
+    for (let i = 0; i < weekStarts.length - 1; i++) {
+      const wStart = weekStarts[i];
+      const wEnd = weekStarts[i + 1];
+      const weekItems = allItems.filter(e => {
+        const t = new Date(e.start?.dateTime || e.start?.date);
+        return t >= wStart && t < wEnd;
+      });
+      const label = wStart.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      weeklyBreakdown.push({
+        label,
+        start: wStart.toISOString(),
+        minutes: calcAcceptedMeetingMins(weekItems),
+        isCurrent: i === 5,
+        isNext: i === 6,
+      });
+    }
 
-    res.json({ events, pendingInvites, meetingCount, meetingMinutes, weeklyMeetingMinutes, lastWeekMeetingMinutes });
+    const weeklyMeetingMinutes = weeklyBreakdown[5]?.minutes || 0;
+    const lastWeekMeetingMinutes = weeklyBreakdown[4]?.minutes || 0;
+
+    res.json({ events, pendingInvites, meetingCount, meetingMinutes, weeklyMeetingMinutes, lastWeekMeetingMinutes, weeklyBreakdown });
   } catch (err) {
     console.error('Calendar error:', err.message);
     res.json({ error: err.message });
