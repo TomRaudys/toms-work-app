@@ -73,7 +73,7 @@ app.get('/api/slack/todos', async (req, res) => {
         'Content-Type': 'application/x-www-form-urlencoded',
         'Cookie': `d=${dCookie}`,
       },
-      body: `token=${encodeURIComponent(xoxcToken)}`,
+      body: `token=${encodeURIComponent(xoxcToken)}&include_message=true`,
     });
     const data = await resp.json();
     if (!data.ok) {
@@ -86,9 +86,11 @@ app.get('/api/slack/todos', async (req, res) => {
       uncompleted: counts.uncompleted_count || 0,
       completed: counts.completed_count || 0,
       total: counts.total_count || 0,
-      items: (data.saved_items || []).slice(0, 10).map(item => ({
+      items: (data.saved_items || []).slice(0, 15).map(item => ({
         type: item.type,
-        text: item.message?.text?.substring(0, 120) || item.title || 'Saved item',
+        text: item.message?.text?.substring(0, 200) || item.title || item.description || 'Saved item',
+        channel: item.channel?.name || '',
+        user: item.message?.username || item.message?.user || '',
         date: item.date_create,
       }))
     });
@@ -363,18 +365,33 @@ app.get('/api/calendar/today', async (req, res) => {
   }
 });
 
-// --- Upcoming Releases (from ClickUp) ---
+// --- Upcoming Releases (from ClickUp Calendars folder) ---
 app.get('/api/releases', async (req, res) => {
   try {
     const token = process.env.CLICKUP_API_TOKEN;
-    const listId = process.env.CLICKUP_RELEASES_LIST_ID;
+    const folderId = process.env.CLICKUP_CALENDAR_FOLDER_ID;
     if (!token) return res.json({ error: 'No ClickUp token configured' });
 
-    const resp = await fetch(
-      `https://api.clickup.com/api/v2/list/${listId}/task?include_closed=false&subtasks=false&order_by=due_date`,
+    // Get all lists in the Calendars folder
+    const folderResp = await fetch(
+      `https://api.clickup.com/api/v2/folder/${folderId}/list`,
       { headers: { Authorization: token } }
     );
-    const data = await resp.json();
+    const folderData = await folderResp.json();
+    const lists = (folderData.lists || []).filter(l => l.id !== process.env.CLICKUP_RELEASES_LIST_ID); // skip the master calendar (it's a rollup)
+
+    // Fetch tasks from all lists in parallel
+    const allTasks = await Promise.all(
+      lists.map(async l => {
+        const resp = await fetch(
+          `https://api.clickup.com/api/v2/list/${l.id}/task?include_closed=false&subtasks=false&order_by=due_date`,
+          { headers: { Authorization: token } }
+        );
+        const d = await resp.json();
+        return (d.tasks || []).map(t => ({ ...t, listName: l.name }));
+      })
+    );
+    const data = { tasks: allTasks.flat() };
 
     const releases = (data.tasks || [])
       .filter(t => t.status?.status !== 'launched' && t.status?.status !== 'archive')
@@ -397,6 +414,7 @@ app.get('/api/releases', async (req, res) => {
           statusColor: t.status?.color,
           assignees: (t.assignees || []).map(a => a.username),
           platforms,
+          category: t.listName || '',
           url: t.url,
         };
       })
@@ -701,6 +719,187 @@ app.get('/auth/google/callback', async (req, res) => {
   } catch (err) {
     console.error('Auth error:', err.message);
     res.status(500).send('Auth error: ' + err.message);
+  }
+});
+
+// --- Team OOO (from OOO calendar) ---
+app.get('/api/calendar/team-ooo', async (req, res) => {
+  try {
+    if (!process.env.GOOGLE_CLIENT_ID) return res.json({ error: 'No Google credentials configured' });
+    const oooCalId = process.env.OOO_CALENDAR_ID;
+    if (!oooCalId) return res.json({ error: 'No OOO calendar configured' });
+
+    const auth = getGoogleAuth();
+    const calendar = google.calendar({ version: 'v3', auth });
+
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7); // show next 7 days
+
+    const resp = await calendar.events.list({
+      calendarId: oooCalId,
+      timeMin: startOfDay.toISOString(),
+      timeMax: endOfDay.toISOString(),
+      singleEvents: true,
+      orderBy: 'startTime',
+      maxResults: 50,
+    });
+
+    const oooList = (resp.data.items || []).map(e => ({
+      name: e.summary || 'Unknown',
+      start: e.start?.dateTime || e.start?.date,
+      end: e.end?.dateTime || e.end?.date,
+      isAllDay: !e.start?.dateTime,
+    }));
+
+    res.json({ ooo: oooList });
+  } catch (err) {
+    console.error('Team OOO error:', err.message);
+    res.json({ error: err.message });
+  }
+});
+
+// --- Gmail Inbox Preview ---
+app.get('/api/gmail/inbox', async (req, res) => {
+  try {
+    if (!process.env.GOOGLE_CLIENT_ID) return res.json({ error: 'No Google credentials configured' });
+    const auth = getGoogleAuth();
+    const gmail = google.gmail({ version: 'v1', auth });
+
+    const listResp = await gmail.users.messages.list({
+      userId: 'me',
+      labelIds: ['INBOX', 'UNREAD'],
+      maxResults: 15,
+    });
+
+    const messages = [];
+    for (const msg of (listResp.data.messages || [])) {
+      const detail = await gmail.users.messages.get({
+        userId: 'me',
+        id: msg.id,
+        format: 'metadata',
+        metadataHeaders: ['From', 'Subject', 'Date'],
+      });
+      const headers = detail.data.payload?.headers || [];
+      const getHeader = (name) => headers.find(h => h.name === name)?.value || '';
+      messages.push({
+        id: msg.id,
+        threadId: detail.data.threadId,
+        snippet: detail.data.snippet,
+        from: getHeader('From'),
+        subject: getHeader('Subject'),
+        date: getHeader('Date'),
+        unread: (detail.data.labelIds || []).includes('UNREAD'),
+      });
+    }
+    res.json({ messages });
+  } catch (err) {
+    console.error('Gmail inbox error:', err.message);
+    res.json({ error: err.message });
+  }
+});
+
+// --- Gmail Follow-ups (unread emails from others) ---
+app.get('/api/gmail/followups', async (req, res) => {
+  try {
+    if (!process.env.GOOGLE_CLIENT_ID) return res.json({ error: 'No Google credentials configured' });
+    const auth = getGoogleAuth();
+    const gmail = google.gmail({ version: 'v1', auth });
+
+    const listResp = await gmail.users.messages.list({
+      userId: 'me',
+      q: 'in:inbox is:unread -from:me newer_than:14d',
+      maxResults: 10,
+    });
+
+    const messages = [];
+    for (const msg of (listResp.data.messages || [])) {
+      const detail = await gmail.users.messages.get({
+        userId: 'me',
+        id: msg.id,
+        format: 'metadata',
+        metadataHeaders: ['From', 'Subject', 'Date'],
+      });
+      const headers = detail.data.payload?.headers || [];
+      const getHeader = (name) => headers.find(h => h.name === name)?.value || '';
+      messages.push({
+        id: msg.id,
+        snippet: detail.data.snippet,
+        from: getHeader('From'),
+        subject: getHeader('Subject'),
+        date: getHeader('Date'),
+      });
+    }
+    res.json({ messages, count: messages.length });
+  } catch (err) {
+    console.error('Gmail followups error:', err.message);
+    res.json({ error: err.message });
+  }
+});
+
+// --- Slack Mentions ---
+app.get('/api/slack/mentions', async (req, res) => {
+  try {
+    const xoxcToken = process.env.SLACK_XOXC_TOKEN;
+    const dCookie = process.env.SLACK_D_COOKIE;
+    if (!xoxcToken || !dCookie) return res.json({ error: 'No Slack xoxc token or d cookie configured' });
+
+    // Search for recent mentions
+    const resp = await fetch('https://app.slack.com/api/search.messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Cookie': `d=${dCookie}`,
+      },
+      body: `token=${encodeURIComponent(xoxcToken)}&query=${encodeURIComponent('to:me')}&count=15&sort=timestamp&sort_dir=desc`,
+    });
+    const data = await resp.json();
+    if (!data.ok) {
+      return res.json({ error: data.error || 'Slack search API error' });
+    }
+
+    const mentions = (data.messages?.matches || []).map(m => ({
+      text: (m.text || '').substring(0, 200),
+      channel: m.channel?.name || 'DM',
+      username: m.username || m.user || 'unknown',
+      ts: m.ts,
+      permalink: m.permalink,
+    }));
+    res.json({ mentions, total: data.messages?.total || 0 });
+  } catch (err) {
+    console.error('Slack mentions error:', err.message);
+    res.json({ error: err.message });
+  }
+});
+
+// --- RSS News Feed ---
+app.get('/api/news', async (req, res) => {
+  try {
+    const feedUrl = process.env.NEWS_RSS_URL || 'https://www.gamesindustry.biz/feed';
+    const resp = await fetch(feedUrl);
+    const xml = await resp.text();
+
+    // Simple XML parsing for RSS items
+    const items = [];
+    const itemRegex = /<item>([\s\S]*?)<\/item>/g;
+    let match;
+    while ((match = itemRegex.exec(xml)) !== null && items.length < 20) {
+      const itemXml = match[1];
+      const get = (tag) => {
+        const m = itemXml.match(new RegExp(`<${tag}[^>]*><!\\[CDATA\\[([\\s\\S]*?)\\]\\]><\\/${tag}>|<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`));
+        return m ? (m[1] || m[2] || '').trim() : '';
+      };
+      items.push({
+        title: get('title'),
+        link: get('link'),
+        description: get('description').replace(/<[^>]+>/g, '').substring(0, 200),
+        pubDate: get('pubDate'),
+      });
+    }
+    res.json({ items });
+  } catch (err) {
+    console.error('News RSS error:', err.message);
+    res.json({ error: err.message });
   }
 });
 
