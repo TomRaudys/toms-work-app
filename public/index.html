@@ -376,7 +376,7 @@
       <div class="card-header">
         <div class="section-tabs">
           <button class="section-tab active" data-section="followups-tab" data-group="followups">Priority Emails <span class="tab-badge warning" id="followups-badge">0</span></button>
-          <button class="section-tab" data-section="clickup-tab" data-group="followups">ClickUp Tasks</button>
+          <button class="section-tab" data-section="clickup-tab" data-group="followups">ClickUp Tasks <span class="tab-badge" id="clickup-badge">0</span></button>
           <button class="section-tab" data-section="slack-saved-tab" data-group="followups">Slack Saved <span class="tab-badge" id="slack-saved-badge">0</span></button>
         </div>
       </div>
@@ -726,7 +726,18 @@
 
     function renderReleaseItem(r, now) {
       let ds='TBD', cd='';
-      if (r.date) { const d=new Date(r.date); ds=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); const ms=d-now,h=ms/36e5,dd=Math.ceil(ms/864e5); cd=ms<=0?'Today':h<24?`In ${Math.floor(h)}h`:dd===1?'Tomorrow':`In ${dd}d`; }
+      if (r.date) {
+        const d = new Date(r.date);
+        ds = d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+        const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const startOfDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        const dayDiff = Math.round((startOfDate - startOfToday) / 864e5);
+        if (dayDiff === 0) cd = 'Today';
+        else if (dayDiff === 1) cd = 'Tomorrow';
+        else if (dayDiff === -1) cd = 'Yesterday';
+        else if (dayDiff > 0) cd = `In ${dayDiff}d`;
+        else cd = `${-dayDiff}d ago`;
+      }
       const st = r.status?`<span class="release-status" style="background:${r.statusColor}22;color:${r.statusColor}">${r.status}</span>`:'';
       const cat = r.category?`<span class="release-category">${r.category}</span>`:'';
       return `<div class="release-item"><div class="release-date">${ds}</div><a class="release-name" href="${r.url}" target="_blank">${r.name}</a>${st}${cat}${cd?`<span class="release-countdown">${cd}</span>`:''}</div>`;
@@ -784,9 +795,16 @@
     async function refreshClickUpTasks() {
       const data = await fetchJSON('/api/clickup/tasks');
       const c = document.getElementById('clickup-tab');
-      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
-      if (!data.tasks?.length) { c.innerHTML = '<div class="card-body empty">No tasks assigned</div>'; return; }
-      c.innerHTML = data.tasks.map(t => {
+      const badge = document.getElementById('clickup-badge');
+      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; if (badge) badge.textContent = '0'; return; }
+      const tasks = (data.tasks || []).slice().sort((a, b) => {
+        const ad = a.dueDate ? parseInt(a.dueDate) : Infinity;
+        const bd = b.dueDate ? parseInt(b.dueDate) : Infinity;
+        return ad - bd;
+      });
+      if (badge) badge.textContent = tasks.length;
+      if (!tasks.length) { c.innerHTML = '<div class="card-body empty">No tasks assigned</div>'; return; }
+      c.innerHTML = tasks.map(t => {
         const ps = t.priority?priorityStyle(t.priority):null;
         const ph = ps?`<span class="task-priority" style="background:${ps.bg};color:${ps.color}">${t.priority}</span>`:'';
         const meta = [t.list, t.dueDate?formatDate(t.dueDate):''].filter(Boolean).join(' · ');

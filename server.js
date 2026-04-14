@@ -16,25 +16,45 @@ app.get('/api/clickup/tasks', async (req, res) => {
     const token = process.env.CLICKUP_API_TOKEN;
     if (!token) return res.json({ error: 'No ClickUp token configured' });
 
-    // Get tasks assigned to me across all spaces
+    // Get all tasks assigned to me across all spaces (My Work view), paginated
     const teamId = process.env.CLICKUP_TEAM_ID;
-    const resp = await fetch(
-      `https://api.clickup.com/api/v2/team/${teamId}/task?assignees[]=${process.env.CLICKUP_USER_ID}&statuses[]=open&statuses[]=in%20progress&statuses[]=to%20do&order_by=due_date&subtasks=true&include_closed=false&page=0`,
-      { headers: { Authorization: token } }
-    );
-    const data = await resp.json();
-    const tasks = (data.tasks || []).slice(0, 10).map(t => ({
-      id: t.id,
-      name: t.name,
-      status: t.status?.status,
-      statusColor: t.status?.color,
-      priority: t.priority?.priority,
-      priorityColor: t.priority?.color,
-      dueDate: t.due_date,
-      url: t.url,
-      list: t.list?.name,
-      folder: t.folder?.name,
-    }));
+    const authHeaders = { headers: { Authorization: token } };
+
+    // Build space id -> name map (team task API returns space: {id} without name)
+    const spacesResp = await fetch(`https://api.clickup.com/api/v2/team/${teamId}/space`, authHeaders);
+    const spacesData = await spacesResp.json();
+    const spaceNameById = {};
+    for (const s of (spacesData.spaces || [])) spaceNameById[s.id] = s.name;
+
+    const baseUrl = `https://api.clickup.com/api/v2/team/${teamId}/task?assignees[]=${process.env.CLICKUP_USER_ID}&statuses[]=open&statuses[]=in%20progress&statuses[]=to%20do&order_by=due_date&subtasks=true&include_closed=false`;
+    const all = [];
+    for (let page = 0; page < 10; page++) {
+      const resp = await fetch(`${baseUrl}&page=${page}`, authHeaders);
+      const data = await resp.json();
+      const pageTasks = data.tasks || [];
+      all.push(...pageTasks);
+      if (pageTasks.length < 100) break; // last page
+    }
+    // Exclude "Tom's Space" space and "Release Calendar" list (normalize punctuation/case)
+    const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+    const EXCLUDED_SPACE = norm("Tom's Space");
+    const EXCLUDED_LIST = norm('Release Calendar');
+    const tasks = all
+      .map(t => ({ t, spaceName: spaceNameById[t.space?.id] || '' }))
+      .filter(({ t, spaceName }) => norm(spaceName) !== EXCLUDED_SPACE && norm(t.list?.name) !== EXCLUDED_LIST)
+      .map(({ t, spaceName }) => ({
+        id: t.id,
+        name: t.name,
+        status: t.status?.status,
+        statusColor: t.status?.color,
+        priority: t.priority?.priority,
+        priorityColor: t.priority?.color,
+        dueDate: t.due_date,
+        url: t.url,
+        list: t.list?.name,
+        folder: t.folder?.name,
+        space: spaceName,
+      }));
     res.json({ tasks });
   } catch (err) {
     console.error('ClickUp error:', err.message);
