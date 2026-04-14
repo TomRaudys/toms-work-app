@@ -67,18 +67,99 @@ app.get('/api/slack/todos', async (req, res) => {
     const dCookie = process.env.SLACK_D_COOKIE;
     if (!xoxcToken || !dCookie) return res.json({ error: 'No Slack xoxc token or d cookie configured' });
 
-    const resp = await fetch('https://app.slack.com/api/saved.list', {
+    const slackPost = (endpoint, body) => fetch(`https://app.slack.com/api/${endpoint}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Cookie': `d=${dCookie}`,
-      },
-      body: `token=${encodeURIComponent(xoxcToken)}&include_message=true`,
-    });
-    const data = await resp.json();
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Cookie': `d=${dCookie}` },
+      body: `token=${encodeURIComponent(xoxcToken)}&${body}`,
+    }).then(r => r.json());
+
+    // Get workspace domain for deep links (cached after first call)
+    if (!global._slackDomain) {
+      try {
+        const authData = await slackPost('auth.test', '');
+        if (authData.ok && authData.url) {
+          global._slackDomain = authData.url.replace(/\/$/, '');
+        }
+      } catch {}
+    }
+
+    const cursor = req.query.cursor || '';
+    const limit = parseInt(req.query.limit) || 20;
+    const data = await slackPost('saved.list', `limit=${limit}${cursor ? '&cursor=' + encodeURIComponent(cursor) : ''}`);
     if (!data.ok) {
       return res.json({ error: data.error || 'Slack saved.list API error' });
     }
+
+    const savedItems = data.saved_items || [];
+    const nextCursor = data.response_metadata?.next_cursor || '';
+
+    // Cache for user names and channel names to avoid duplicate lookups
+    const userCache = {};
+    const chanCache = {};
+
+    async function resolveUser(userId) {
+      if (!userId) return '';
+      if (userCache[userId]) return userCache[userId];
+      try {
+        const ud = await slackPost('users.info', `user=${userId}`);
+        const name = ud.ok ? (ud.user?.profile?.display_name || ud.user?.real_name || ud.user?.name || userId) : userId;
+        userCache[userId] = name;
+        return name;
+      } catch { userCache[userId] = userId; return userId; }
+    }
+
+    async function resolveChan(channelId) {
+      if (chanCache[channelId]) return chanCache[channelId];
+      try {
+        const cd = await slackPost('conversations.info', `channel=${channelId}`);
+        let name = '';
+        if (cd.ok) {
+          if (cd.channel?.is_im) name = 'DM';
+          else if (cd.channel?.is_mpim) name = 'Group DM';
+          else name = cd.channel?.name || '';
+        }
+        chanCache[channelId] = name;
+        return name;
+      } catch { chanCache[channelId] = ''; return ''; }
+    }
+
+    // Fetch actual message content + channel info + user names in parallel
+    const enriched = await Promise.all(savedItems.map(async (item) => {
+      try {
+        const channelId = item.item_id;
+        const ts = item.ts;
+
+        const [msgData, channelName] = await Promise.all([
+          slackPost('conversations.history', `channel=${channelId}&latest=${ts}&oldest=${ts}&inclusive=true&limit=1`),
+          resolveChan(channelId),
+        ]);
+
+        const msg = msgData.ok ? msgData.messages?.[0] : null;
+        const userName = await resolveUser(msg?.user);
+
+        return {
+          type: item.item_type || 'message',
+          text: msg?.text?.substring(0, 400) || '(no content)',
+          channel: channelName,
+          channelId: channelId,
+          user: userName,
+          date: item.date_created,
+          msgTs: msg?.ts ? parseFloat(msg.ts) : item.date_created,
+          ts: item.ts,
+        };
+      } catch (e) {
+        return {
+          type: item.item_type || 'message',
+          text: '(failed to load)',
+          channel: '',
+          channelId: '',
+          user: '',
+          date: item.date_created,
+          msgTs: item.date_created,
+          ts: '',
+        };
+      }
+    }));
 
     const counts = data.counts || {};
     res.json({
@@ -86,13 +167,9 @@ app.get('/api/slack/todos', async (req, res) => {
       uncompleted: counts.uncompleted_count || 0,
       completed: counts.completed_count || 0,
       total: counts.total_count || 0,
-      items: (data.saved_items || []).slice(0, 15).map(item => ({
-        type: item.type,
-        text: item.message?.text?.substring(0, 200) || item.title || item.description || 'Saved item',
-        channel: item.channel?.name || '',
-        user: item.message?.username || item.message?.user || '',
-        date: item.date_create,
-      }))
+      items: enriched,
+      nextCursor: nextCursor,
+      slackDomain: global._slackDomain || '',
     });
   } catch (err) {
     console.error('Slack error:', err.message);
@@ -188,7 +265,7 @@ app.get('/api/calendar/today', async (req, res) => {
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    const endOf30d = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+    const endOfInviteWindow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
 
     // Today's events
     const eventsResp = await calendar.events.list({
@@ -264,11 +341,11 @@ app.get('/api/calendar/today', async (req, res) => {
       };
     });
 
-    // Pending invites in next 7 days
+    // Pending invites in next 12 months
     const upcomingResp = await calendar.events.list({
       calendarId: 'primary',
       timeMin: now.toISOString(),
-      timeMax: endOf30d.toISOString(),
+      timeMax: endOfInviteWindow.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
     });
@@ -277,6 +354,7 @@ app.get('/api/calendar/today', async (req, res) => {
       const myResponse = e.attendees?.find(a => a.self);
       return myResponse && myResponse.responseStatus === 'needsAction';
     }).map(e => ({
+      id: e.id,
       summary: e.summary,
       start: e.start?.dateTime || e.start?.date,
       end: e.end?.dateTime || e.end?.date,
@@ -370,7 +448,37 @@ app.get('/api/releases', async (req, res) => {
   try {
     const token = process.env.CLICKUP_API_TOKEN;
     const folderId = process.env.CLICKUP_CALENDAR_FOLDER_ID;
+    const masterCalId = process.env.CLICKUP_RELEASES_LIST_ID;
     if (!token) return res.json({ error: 'No ClickUp token configured' });
+
+    function mapTask(t, listName) {
+      const platformsField = (t.custom_fields || []).find(f => f.name === 'Platforms');
+      let platforms = [];
+      if (platformsField && platformsField.value && platformsField.type_config?.options) {
+        const selected = Array.isArray(platformsField.value) ? platformsField.value : [];
+        platforms = selected.map(id => {
+          const opt = platformsField.type_config.options.find(o => o.id === id);
+          return opt ? opt.label : null;
+        }).filter(Boolean);
+      }
+      return {
+        name: t.name,
+        date: t.due_date ? new Date(parseInt(t.due_date)).toISOString() : null,
+        status: t.status?.status,
+        statusColor: t.status?.color,
+        assignees: (t.assignees || []).map(a => a.username),
+        platforms,
+        category: listName || '',
+        url: t.url,
+      };
+    }
+
+    const sortByDate = (a, b) => {
+      if (!a.date && !b.date) return 0;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
+      return new Date(a.date) - new Date(b.date);
+    };
 
     // Get all lists in the Calendars folder
     const folderResp = await fetch(
@@ -378,54 +486,41 @@ app.get('/api/releases', async (req, res) => {
       { headers: { Authorization: token } }
     );
     const folderData = await folderResp.json();
-    const lists = (folderData.lists || []).filter(l => l.id !== process.env.CLICKUP_RELEASES_LIST_ID); // skip the master calendar (it's a rollup)
 
-    // Fetch tasks from all lists in parallel
-    const allTasks = await Promise.all(
-      lists.map(async l => {
-        const resp = await fetch(
-          `https://api.clickup.com/api/v2/list/${l.id}/task?include_closed=false&subtasks=false&order_by=due_date`,
-          { headers: { Authorization: token } }
-        );
-        const d = await resp.json();
-        return (d.tasks || []).map(t => ({ ...t, listName: l.name }));
-      })
-    );
-    const data = { tasks: allTasks.flat() };
+    // Separate Release Calendar from the rest
+    const releaseCalList = (folderData.lists || []).find(l => l.name === 'Release Calendar');
+    const releaseCalId = releaseCalList ? releaseCalList.id : null;
+    // Skip master calendar (empty rollup) and Release Calendar from the event lists
+    const eventLists = (folderData.lists || []).filter(l => l.id !== masterCalId && (!releaseCalId || l.id !== releaseCalId));
 
-    const releases = (data.tasks || [])
+    // Fetch Release Calendar and all event lists in parallel
+    const fetchList = async (id, name) => {
+      const resp = await fetch(
+        `https://api.clickup.com/api/v2/list/${id}/task?include_closed=false&subtasks=false&order_by=due_date`,
+        { headers: { Authorization: token } }
+      );
+      const d = await resp.json();
+      return (d.tasks || []).map(t => ({ ...t, listName: name }));
+    };
+
+    const [releaseCalTasks, ...eventTaskArrays] = await Promise.all([
+      releaseCalId ? fetchList(releaseCalId, 'Release Calendar') : Promise.resolve([]),
+      ...eventLists.map(l => fetchList(l.id, l.name)),
+    ]);
+
+    // Releases = from Release Calendar list
+    const releases = releaseCalTasks
       .filter(t => t.status?.status !== 'launched' && t.status?.status !== 'archive')
-      .map(t => {
-        // Extract platforms from custom field
-        const platformsField = (t.custom_fields || []).find(f => f.name === 'Platforms');
-        let platforms = [];
-        if (platformsField && platformsField.value && platformsField.type_config?.options) {
-          const selected = Array.isArray(platformsField.value) ? platformsField.value : [];
-          platforms = selected.map(id => {
-            const opt = platformsField.type_config.options.find(o => o.id === id);
-            return opt ? opt.label : null;
-          }).filter(Boolean);
-        }
+      .map(t => mapTask(t, 'Release Calendar'))
+      .sort(sortByDate);
 
-        return {
-          name: t.name,
-          date: t.due_date ? new Date(parseInt(t.due_date)).toISOString() : null,
-          status: t.status?.status,
-          statusColor: t.status?.color,
-          assignees: (t.assignees || []).map(a => a.username),
-          platforms,
-          category: t.listName || '',
-          url: t.url,
-        };
-      })
-      .sort((a, b) => {
-        if (!a.date && !b.date) return 0;
-        if (!a.date) return 1;
-        if (!b.date) return -1;
-        return new Date(a.date) - new Date(b.date);
-      });
+    // All Events = from all other lists (not Release Calendar, not Master Calendar)
+    const allEvents = eventTaskArrays.flat()
+      .filter(t => t.status?.status !== 'launched' && t.status?.status !== 'archive')
+      .map(t => mapTask(t, t.listName))
+      .sort(sortByDate);
 
-    res.json({ releases });
+    res.json({ releases, allEvents });
   } catch (err) {
     console.error('Releases error:', err.message);
     res.json({ error: err.message });
@@ -700,7 +795,8 @@ app.get('/auth/google', (req, res) => {
     prompt: 'consent',
     scope: [
       'https://www.googleapis.com/auth/gmail.readonly',
-      'https://www.googleapis.com/auth/calendar.readonly',
+      'https://www.googleapis.com/auth/calendar',
+      'https://www.googleapis.com/auth/calendar.events',
       'https://www.googleapis.com/auth/drive.readonly',
       'https://www.googleapis.com/auth/documents.readonly',
     ],
@@ -715,10 +811,60 @@ app.get('/auth/google/callback', async (req, res) => {
     console.log('\n=== NEW REFRESH TOKEN ===');
     console.log(tokens.refresh_token);
     console.log('=========================\n');
-    res.send('<h2>Auth successful!</h2><p>New refresh token has been printed to the server console. Update your .env file with it.</p><p>You can close this tab.</p>');
+    // Auto-update .env with new refresh token
+    if (tokens.refresh_token) {
+      const envPath = require('path').join(__dirname, '.env');
+      let envContent = require('fs').readFileSync(envPath, 'utf8');
+      envContent = envContent.replace(/GOOGLE_REFRESH_TOKEN=.*/, 'GOOGLE_REFRESH_TOKEN=' + tokens.refresh_token);
+      require('fs').writeFileSync(envPath, envContent);
+      // Update current process env too
+      process.env.GOOGLE_REFRESH_TOKEN = tokens.refresh_token;
+      res.send('<h2>Auth successful!</h2><p>Refresh token has been automatically updated in .env. Restart the server to apply.</p><p>You can close this tab.</p>');
+    } else {
+      res.send('<h2>Auth successful!</h2><p>No new refresh token was returned. The existing token may still work. Try restarting the server.</p>');
+    }
   } catch (err) {
     console.error('Auth error:', err.message);
     res.status(500).send('Auth error: ' + err.message);
+  }
+});
+
+// --- Respond to Calendar Invite ---
+app.post('/api/calendar/respond', express.json(), async (req, res) => {
+  try {
+    if (!process.env.GOOGLE_CLIENT_ID) return res.json({ error: 'No Google credentials configured' });
+    const { eventId, calendarId, response } = req.body;
+    if (!eventId || !response) return res.json({ error: 'Missing eventId or response' });
+
+    const auth = getGoogleAuth();
+    const calendar = google.calendar({ version: 'v3', auth });
+
+    // Get the event first to preserve existing data
+    const event = await calendar.events.get({
+      calendarId: calendarId || 'primary',
+      eventId: eventId,
+    });
+
+    // Find self in attendees and update response
+    const myEmail = process.env.GOOGLE_CALENDAR_ID || 'primary';
+    const attendees = (event.data.attendees || []).map(a => {
+      if (a.self) {
+        return { ...a, responseStatus: response };
+      }
+      return a;
+    });
+
+    await calendar.events.patch({
+      calendarId: calendarId || 'primary',
+      eventId: eventId,
+      requestBody: { attendees },
+      sendUpdates: 'all',
+    });
+
+    res.json({ ok: true, response });
+  } catch (err) {
+    console.error('Calendar respond error:', err.message);
+    res.json({ error: err.message });
   }
 });
 
@@ -734,23 +880,39 @@ app.get('/api/calendar/team-ooo', async (req, res) => {
 
     const now = new Date();
     const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7); // show next 7 days
+    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59); // through end of year
 
     const resp = await calendar.events.list({
       calendarId: oooCalId,
       timeMin: startOfDay.toISOString(),
-      timeMax: endOfDay.toISOString(),
+      timeMax: endOfYear.toISOString(),
       singleEvents: true,
       orderBy: 'startTime',
-      maxResults: 50,
+      maxResults: 250,
     });
 
-    const oooList = (resp.data.items || []).map(e => ({
-      name: e.summary || 'Unknown',
-      start: e.start?.dateTime || e.start?.date,
-      end: e.end?.dateTime || e.end?.date,
-      isAllDay: !e.start?.dateTime,
-    }));
+    const rawList = (resp.data.items || []).map(e => {
+      // Clean name: remove pipeline suffixes like ":: All Managers > hidden > OOO Pipeline"
+      let name = e.summary || 'Unknown';
+      name = name.replace(/\s*::.*$/, '').replace(/^🔄\s*/, '').trim();
+      // Extract just the person's name from patterns like "Name OOO"
+      name = name.replace(/\s+OOO$/i, '').trim();
+      return {
+        name,
+        start: e.start?.dateTime || e.start?.date,
+        end: e.end?.dateTime || e.end?.date,
+        isAllDay: !e.start?.dateTime,
+      };
+    });
+
+    // Deduplicate: same name + same start + same end = duplicate
+    const seen = new Set();
+    const oooList = rawList.filter(o => {
+      const key = `${o.name}|${o.start}|${o.end}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
     res.json({ ooo: oooList });
   } catch (err) {
@@ -799,7 +961,7 @@ app.get('/api/gmail/inbox', async (req, res) => {
   }
 });
 
-// --- Gmail Follow-ups (unread emails from others) ---
+// --- Gmail Priority Emails (important + unread) ---
 app.get('/api/gmail/followups', async (req, res) => {
   try {
     if (!process.env.GOOGLE_CLIENT_ID) return res.json({ error: 'No Google credentials configured' });
@@ -808,8 +970,8 @@ app.get('/api/gmail/followups', async (req, res) => {
 
     const listResp = await gmail.users.messages.list({
       userId: 'me',
-      q: 'in:inbox is:unread -from:me newer_than:14d',
-      maxResults: 10,
+      q: 'is:important is:unread',
+      maxResults: 15,
     });
 
     const messages = [];
@@ -824,6 +986,7 @@ app.get('/api/gmail/followups', async (req, res) => {
       const getHeader = (name) => headers.find(h => h.name === name)?.value || '';
       messages.push({
         id: msg.id,
+        threadId: detail.data.threadId,
         snippet: detail.data.snippet,
         from: getHeader('From'),
         subject: getHeader('Subject'),

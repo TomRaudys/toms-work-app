@@ -42,66 +42,23 @@
     }
     @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-    /* Tab bar — full width, blends into content */
-    .tab-bar {
-      display: flex;
-      padding: 0 32px;
-      background: rgba(255, 255, 255, 0.38);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.3);
-    }
-    .tab-btn {
-      padding: 10px 24px;
-      border: none;
-      background: transparent;
-      font-family: inherit;
-      font-size: 13px;
-      font-weight: 600;
-      color: #6e6e73;
-      cursor: pointer;
-      transition: all 0.2s;
-      border-bottom: 2px solid transparent;
-      margin-bottom: -1px;
-    }
-    .tab-btn:hover { color: #007aff; }
-    .tab-btn.active { color: #007aff; border-bottom-color: #007aff; }
-
-    /* Tab panels fill remaining space */
-    .tab-panel { display: none; height: calc(100vh - 87px); padding: 16px 32px; max-width: 1600px; margin: 0 auto; overflow: hidden; }
-    .tab-panel.active { display: grid; gap: 14px; }
-
-    /* Calendar tab: events | releases+invites+ooo | clocks */
-    #tab-calendar {
-      grid-template-columns: 1.2fr 1fr 220px;
-      grid-template-rows: 1fr 1fr;
-    }
-    #tab-calendar .card-events { grid-row: 1 / 3; }
-    #tab-calendar .card-releases { grid-row: 1 / 3; }
-    #tab-calendar .card-clocks { grid-row: 1 / 3; }
-
-    /* Work tab: tasks | highlevel+followups | summary+notes */
-    #tab-work {
+    /* Dashboard grid — single page, no top tabs */
+    .dashboard {
+      display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       grid-template-rows: auto 1fr;
+      gap: 12px;
+      height: calc(100vh - 52px);
+      padding: 14px 24px;
+      overflow: hidden;
     }
-    #tab-work .card-clickup-tasks { grid-row: 1 / 3; }
-    #tab-work .card-summary { grid-row: 1; grid-column: 2 / 4; }
-    #tab-work .card-highlevel { grid-row: 2; }
-    #tab-work .card-meeting-notes { grid-row: 2; }
 
-    /* Comms tab: inbox | saved+followups */
-    #tab-comms {
-      grid-template-columns: 1fr 1fr;
-      grid-template-rows: 1fr 1fr;
-    }
-    #tab-comms .card-inbox { grid-row: 1 / 3; }
-
-    /* News tab */
-    #tab-news {
-      grid-template-columns: 1fr;
-      grid-template-rows: 1fr;
-    }
+    /* Grid placement */
+    .card-events-tabbed { grid-column: 1; grid-row: 1 / 3; }
+    .card-summary { grid-column: 2; grid-row: 1; }
+    .card-clocks { grid-column: 3; grid-row: 1; }
+    .card-followups-tabbed { grid-column: 2; grid-row: 2; }
+    .card-releases-tabbed { grid-column: 3; grid-row: 2; }
 
     /* Cards */
     .card {
@@ -146,6 +103,56 @@
     .card-body::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 3px; }
     .card-body.empty { color: #86868b; font-size: 13px; text-align: center; padding: 28px 20px; }
 
+    /* Section sub-tabs (small pill tabs inside card headers) */
+    .section-tabs {
+      display: flex;
+      gap: 3px;
+      background: rgba(0, 0, 0, 0.04);
+      border-radius: 8px;
+      padding: 2px;
+    }
+    .section-tab {
+      padding: 4px 12px;
+      border: none;
+      background: transparent;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      color: rgba(60, 60, 67, 0.5);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+    .section-tab:hover {
+      color: rgba(60, 60, 67, 0.8);
+    }
+    .section-tab.active {
+      color: #1d1d1f;
+      background: rgba(255, 255, 255, 0.8);
+      box-shadow: 0 0.5px 1px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    .section-tab .tab-badge {
+      display: inline-block;
+      background: rgba(0, 122, 255, 0.15);
+      color: #007aff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 999px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+    .section-tab.active .tab-badge {
+      background: rgba(0, 122, 255, 0.2);
+    }
+
+    .tab-pane { display: none; flex: 1; min-height: 0; overflow-y: auto; padding: 10px 16px; }
+    .tab-pane.active { display: block; }
+    .tab-pane::-webkit-scrollbar { width: 6px; }
+    .tab-pane::-webkit-scrollbar-track { background: transparent; }
+    .tab-pane::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 3px; }
+
     /* Summary table */
     .card-summary .card-body { padding: 6px 16px; overflow: hidden; display: flex; flex-direction: column; }
     .summary-table { width: 100%; border-collapse: collapse; }
@@ -153,23 +160,21 @@
     .summary-label { color: #6e6e73; font-weight: 500; }
     .summary-value { font-weight: 700; color: #1d1d1f; font-size: 15px; text-align: right; padding-right: 16px !important; }
 
-    /* Clocks — vertical stack */
-    .clocks-vertical { display: flex; flex-direction: column; gap: 0; }
-    .clock-item {
-      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    }
-    .clock-item:last-child { border-bottom: none; }
-    .clock-face { width: 40px; height: 40px; flex-shrink: 0; }
-    .clock-info { flex: 1; min-width: 0; }
-    .clock-city-row { display: flex; align-items: center; gap: 4px; }
-    .clock-city { font-size: 12px; font-weight: 600; color: #1d1d1f; }
-    .clock-tz { font-size: 10px; color: #86868b; }
-    .clock-tod { font-size: 14px; }
-    .clock-digital { display: flex; align-items: baseline; gap: 3px; margin-top: 1px; }
-    .clock-time { font-size: 18px; font-weight: 600; color: #1d1d1f; font-variant-numeric: tabular-nums; }
-    .clock-period { font-size: 11px; color: #6e6e73; }
-    .clock-date { font-size: 10px; color: #86868b; margin-top: 1px; }
+    /* Globe */
+    .tz-widget { padding: 10px 14px; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 0; }
+    .tz-row { display: flex; align-items: center; gap: 0; height: 40px; position: relative; }
+    .tz-label { width: 100px; flex-shrink: 0; }
+    .tz-city { font-size: 11px; font-weight: 600; color: #1d1d1f; line-height: 1.2; }
+    .tz-city .tz-zone { font-weight: 500; color: #6e6e73; font-size: 9px; margin-left: 3px; }
+    .tz-time { font-size: 12px; font-weight: 700; color: #1d1d1f; font-variant-numeric: tabular-nums; }
+    .tz-bar-wrap { flex: 1; height: 20px; position: relative; border-radius: 6px; overflow: hidden; background: rgba(0,0,0,0.04); }
+    .tz-bar-day { position: absolute; height: 100%; background: linear-gradient(90deg, rgba(131,168,220,0.15) 0%, rgba(131,168,220,0.25) 20%, rgba(131,168,220,0.25) 80%, rgba(131,168,220,0.15) 100%); border-radius: 4px; }
+    .tz-bar-work { position: absolute; height: 100%; background: rgba(59,130,246,0.15); border-radius: 3px; }
+    .tz-now { position: absolute; top: -2px; bottom: -2px; width: 2px; background: #3a7bd5; border-radius: 1px; z-index: 2; }
+    .tz-now::after { content: ''; position: absolute; top: -2px; left: -3px; width: 8px; height: 8px; background: #3a7bd5; border-radius: 50%; }
+    .tz-hour-marks { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    .tz-hour-mark { position: absolute; top: 0; height: 100%; width: 1px; background: rgba(0,0,0,0.05); }
+    .tz-hour-label { position: absolute; top: 50%; transform: translateY(-50%); font-size: 8px; color: rgba(0,0,0,0.25); font-weight: 500; pointer-events: none; margin-left: 2px; }
 
     /* Event list */
     .event-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
@@ -207,6 +212,15 @@
     .invite-name { font-size: 13px; color: #1d1d1f; text-decoration: none; display: block; }
     .invite-name:hover { color: #007aff; }
     .invite-meta { font-size: 11px; color: #86868b; margin-top: 2px; }
+    .invite-actions { display: flex; gap: 4px; flex-shrink: 0; margin-left: 8px; }
+    .invite-btn { border: none; font-family: inherit; font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; }
+    .invite-btn.accept { background: rgba(52, 199, 89, 0.15); color: #248a3d; }
+    .invite-btn.accept:hover { background: rgba(52, 199, 89, 0.3); }
+    .invite-btn.tentative { background: rgba(255, 149, 0, 0.15); color: #c77c00; }
+    .invite-btn.tentative:hover { background: rgba(255, 149, 0, 0.3); }
+    .invite-btn.decline { background: rgba(255, 59, 48, 0.12); color: #d70015; }
+    .invite-btn.decline:hover { background: rgba(255, 59, 48, 0.25); }
+    .invite-btn:disabled { opacity: 0.4; cursor: default; }
     .release-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
     .release-item:last-child { border-bottom: none; }
     .release-date { font-size: 11px; font-weight: 600; color: #007aff; min-width: 70px; flex-shrink: 0; }
@@ -215,14 +229,6 @@
     .release-status { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
     .release-category { font-size: 9px; color: #86868b; white-space: nowrap; flex-shrink: 0; }
     .release-countdown { font-size: 10px; color: #86868b; font-weight: 500; margin-left: auto; flex-shrink: 0; }
-    .task-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
-    .task-item:last-child { border-bottom: none; }
-    .task-status { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
-    .task-info { flex: 1; min-width: 0; }
-    .task-name { font-size: 13px; font-weight: 500; color: #1d1d1f; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .task-name:hover { color: #007aff; }
-    .task-meta { font-size: 11px; color: #86868b; margin-top: 2px; }
-    .task-priority { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 6px; flex-shrink: 0; margin-top: 3px; }
 
     /* Timeline (high level) */
     .timeline-group { margin-bottom: 8px; }
@@ -233,6 +239,7 @@
     .timeline-task-name { font-size: 13px; font-weight: 500; color: #1d1d1f; text-decoration: none; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .timeline-task-name:hover { color: #007aff; }
     .timeline-date-hint { font-size: 10px; color: #86868b; flex-shrink: 0; }
+    .task-priority { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 6px; flex-shrink: 0; }
 
     /* Meeting notes */
     .weekly-meeting-block { margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
@@ -243,7 +250,7 @@
     .weekly-meeting-source.gemini { background: rgba(59, 130, 246, 0.12); color: #2563eb; }
     .weekly-meeting-title { font-size: 13px; font-weight: 600; color: #1d1d1f; }
     .weekly-meeting-date { font-size: 11px; color: #86868b; margin-left: auto; flex-shrink: 0; }
-    .weekly-meeting-summary { font-size: 12px; color: #3c3c43; line-height: 1.4; margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .weekly-meeting-summary { font-size: 12px; color: #3c3c43; line-height: 1.4; margin-top: 3px; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 
     /* Email items */
     .email-item { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); align-items: flex-start; }
@@ -256,32 +263,44 @@
     .email-snippet { font-size: 11px; color: #86868b; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
     .email-date { font-size: 10px; color: #86868b; flex-shrink: 0; margin-top: 2px; }
 
+    /* OOO timeline */
+    .ooo-timeline { position: relative; padding: 0; }
+    .ooo-timeline-header { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
+    .ooo-timeline-dates { display: flex; justify-content: space-between; font-size: 9px; color: #86868b; margin-bottom: 6px; padding: 0 2px; }
+    .ooo-timeline-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+    .ooo-timeline-row:last-child { margin-bottom: 0; }
+    .ooo-tl-name { font-size: 11px; font-weight: 600; color: #1d1d1f; min-width: 80px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+    .ooo-tl-track { flex: 1; height: 16px; position: relative; background: rgba(0,0,0,0.03); border-radius: 4px; }
+    .ooo-tl-bar { position: absolute; top: 2px; height: 12px; border-radius: 3px; min-width: 4px; }
+    .ooo-tl-today { position: absolute; top: -2px; bottom: -2px; width: 1.5px; background: #ff3b30; z-index: 2; }
+
     /* Saved items */
-    .saved-item { padding: 7px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
+    .saved-item { padding: 7px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); border-radius: 6px; margin: 0 -4px; padding-left: 4px; padding-right: 4px; cursor: pointer; }
+    .saved-item:hover { background: rgba(0, 122, 255, 0.06); }
     .saved-item:last-child { border-bottom: none; }
     .saved-item-header { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
-    .saved-item-type { font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 4px; background: rgba(0, 0, 0, 0.06); color: #6e6e73; }
     .saved-item-channel { font-size: 11px; color: #007aff; font-weight: 500; }
+    .saved-item-sender { font-size: 11px; font-weight: 600; color: #1d1d1f; }
     .saved-item-date { font-size: 11px; color: #86868b; margin-left: auto; }
     .saved-item-preview { font-size: 12px; color: #3c3c43; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-    /* OOO items */
-    .ooo-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
-    .ooo-item:last-child { border-bottom: none; }
-    .ooo-name { font-size: 13px; font-weight: 600; color: #1d1d1f; }
-    .ooo-dates { font-size: 11px; color: #86868b; margin-left: auto; }
+    /* Task items */
+    .task-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
+    .task-item:last-child { border-bottom: none; }
+    .task-status { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; }
+    .task-info { flex: 1; min-width: 0; }
+    .task-name { font-size: 13px; font-weight: 500; color: #1d1d1f; text-decoration: none; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .task-name:hover { color: #007aff; }
+    .task-meta { font-size: 11px; color: #86868b; margin-top: 2px; }
 
-    /* News items */
-    .news-item { padding: 10px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
-    .news-item:last-child { border-bottom: none; }
-    .news-title { font-size: 14px; font-weight: 600; color: #1d1d1f; text-decoration: none; display: block; margin-bottom: 4px; }
-    .news-title:hover { color: #007aff; }
-    .news-desc { font-size: 12px; color: #6e6e73; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .news-date { font-size: 10px; color: #86868b; margin-top: 4px; }
+    /* Email item hover for clickable */
+    .email-item[style*="cursor"] { border-radius: 6px; margin: 0 -4px; padding-left: 4px; padding-right: 4px; }
+    .email-item[style*="cursor"]:hover { background: rgba(0, 122, 255, 0.06); }
 
     .loading { color: #86868b; font-size: 13px; padding: 24px; text-align: center; }
     .error-msg { color: #c77c00; font-size: 13px; padding: 12px; text-align: center; background: rgba(255, 149, 0, 0.1); border-radius: 12px; margin: 8px; }
   </style>
+
 </head>
 <body>
   <div class="header">
@@ -293,64 +312,22 @@
     </div>
   </div>
 
-  <div class="tab-bar">
-    <button class="tab-btn active" data-tab="calendar">🗓️ Calendar</button>
-    <button class="tab-btn" data-tab="work">💼 Work</button>
-    <button class="tab-btn" data-tab="comms">💬 Comms</button>
-    <button class="tab-btn" data-tab="news">📰 News</button>
-  </div>
-
-  <!-- CALENDAR TAB -->
-  <div class="tab-panel active" id="tab-calendar">
-    <div class="card card-events">
+  <div class="dashboard">
+    <!-- Events card with sub-tabs (col1, full height) -->
+    <div class="card card-events-tabbed">
       <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🗓️</span> Today's Events</h2>
-        <span class="badge" id="calendar-badge">0</span>
+        <div class="section-tabs">
+          <button class="section-tab active" data-section="events-tab" data-group="events">Events <span class="tab-badge" id="events-tab-badge">0</span></button>
+          <button class="section-tab" data-section="invites-tab" data-group="events">Invites <span class="tab-badge" id="invites-tab-badge">0</span></button>
+          <button class="section-tab" data-section="notes-tab" data-group="events">Meeting Notes</button>
+        </div>
       </div>
-      <div class="card-body" id="calendar-events"><div class="loading">Loading calendar...</div></div>
+      <div class="tab-pane active" id="events-tab"><div class="loading">Loading calendar...</div></div>
+      <div class="tab-pane" id="invites-tab"><div class="loading">Loading...</div></div>
+      <div class="tab-pane" id="notes-tab"><div class="loading">Loading...</div></div>
     </div>
 
-    <div class="card card-releases">
-      <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🚀</span> Upcoming Releases</h2>
-      </div>
-      <div class="card-body" id="releases-list"><div class="loading">Loading releases...</div></div>
-    </div>
-
-    <div class="card card-clocks">
-      <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🕐</span> Clocks</h2>
-      </div>
-      <div class="card-body" style="padding: 0;">
-        <div class="clocks-vertical" id="clocks-strip"></div>
-      </div>
-    </div>
-
-    <div class="card card-invites">
-      <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">📩</span> Pending Invites</h2>
-        <span class="badge warning" id="invites-badge">0</span>
-      </div>
-      <div class="card-body" id="pending-invites"><div class="loading">Loading...</div></div>
-    </div>
-
-    <div class="card card-ooo">
-      <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🏖️</span> Team OOO</h2>
-      </div>
-      <div class="card-body" id="team-ooo-list"><div class="loading">Loading...</div></div>
-    </div>
-  </div>
-
-  <!-- WORK TAB -->
-  <div class="tab-panel" id="tab-work">
-    <div class="card card-clickup-tasks">
-      <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">✅</span> My ClickUp Tasks</h2>
-      </div>
-      <div class="card-body" id="clickup-tasks-list"><div class="loading">Loading tasks...</div></div>
-    </div>
-
+    <!-- Summary (col2, row1) -->
     <div class="card card-summary">
       <div class="card-header">
         <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">📊</span> Summary</h2>
@@ -364,153 +341,228 @@
             <td class="summary-value" id="stat-email">-</td>
           </tr>
           <tr>
-            <td class="summary-label">🔖 Slack saved</td>
-            <td class="summary-value" id="stat-slack-saved">-</td>
             <td class="summary-label">📅 Meetings today</td>
             <td class="summary-value" id="stat-meetings">-</td>
+            <td class="summary-label">⏱️ Meeting time</td>
+            <td class="summary-value" id="stat-meeting-time">-</td>
           </tr>
           <tr>
-            <td class="summary-label">⏱️ Meeting time today</td>
-            <td class="summary-value" id="stat-meeting-time">-</td>
             <td class="summary-label">🟢 Focus time left</td>
             <td class="summary-value" id="stat-focus-time">-</td>
+            <td class="summary-label">📊 Week total</td>
+            <td class="summary-value" id="stat-weekly-meeting-time">-</td>
           </tr>
         </tbody></table>
         <hr style="border: none; border-top: 1px solid rgba(0,0,0,0.08); margin: 4px 0;">
         <div id="weekly-chart" style="padding-top: 2px;"></div>
-        <div style="display: flex; justify-content: center; align-items: baseline; gap: 8px; margin-top: 14px;">
-          <span style="color: #6e6e73; font-weight: 500; font-size: 12px;">📊 Meeting time this week</span>
-          <span id="stat-weekly-meeting-time" style="font-weight: 700; color: #1d1d1f; font-size: 12px;">-</span>
-          <span id="stat-week-change" style="font-size: 12px; font-weight: 600;"></span>
+        <div style="display: flex; justify-content: center; align-items: baseline; gap: 8px; margin-top: 6px;">
+          <span id="stat-week-change" style="font-size: 11px; font-weight: 600;"></span>
         </div>
       </div>
     </div>
 
-    <div class="card card-highlevel">
+    <!-- World Clocks (col3, row1) -->
+    <div class="card card-clocks">
       <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🎯</span> Studio High Level</h2>
+        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🌍</span> World Clocks</h2>
       </div>
-      <div class="card-body" id="highlevel-list"><div class="loading">Loading...</div></div>
+      <div class="card-body" style="padding: 0;">
+        <div class="tz-widget" id="tz-widget"></div>
+      </div>
     </div>
 
-    <div class="card card-meeting-notes">
+    <!-- Emails + ClickUp Tasks tabbed (col2, row2 to bottom) -->
+    <div class="card card-followups-tabbed">
       <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">📋</span> Meeting Notes</h2>
+        <div class="section-tabs">
+          <button class="section-tab active" data-section="followups-tab" data-group="followups">Priority Emails <span class="tab-badge warning" id="followups-badge">0</span></button>
+          <button class="section-tab" data-section="clickup-tab" data-group="followups">ClickUp Tasks</button>
+          <button class="section-tab" data-section="slack-saved-tab" data-group="followups">Slack Saved <span class="tab-badge" id="slack-saved-badge">0</span></button>
+        </div>
       </div>
-      <div class="card-body" id="weekly-summary"><div class="loading">Loading...</div></div>
-    </div>
-  </div>
-
-  <!-- COMMS TAB -->
-  <div class="tab-panel" id="tab-comms">
-    <div class="card card-inbox">
-      <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">📧</span> Unread Emails</h2>
-        <span class="badge" id="inbox-badge">0</span>
-      </div>
-      <div class="card-body" id="inbox-list"><div class="loading">Loading inbox...</div></div>
+      <div class="tab-pane active" id="followups-tab"><div class="loading">Loading...</div></div>
+      <div class="tab-pane" id="clickup-tab"><div class="loading">Loading tasks...</div></div>
+      <div class="tab-pane" id="slack-saved-tab"><div class="loading">Loading saved messages...</div></div>
     </div>
 
-    <div class="card card-slack-saved">
+    <!-- Releases + Team OOO tabbed (col3, row2 to bottom) -->
+    <div class="card card-releases-tabbed">
       <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">🔖</span> Slack Saved Messages</h2>
+        <div class="section-tabs">
+          <button class="section-tab active" data-section="releases-tab" data-group="releases">Releases</button>
+          <button class="section-tab" data-section="all-releases-tab" data-group="releases">All Events</button>
+          <button class="section-tab" data-section="ooo-tab" data-group="releases">Team OOO</button>
+        </div>
       </div>
-      <div class="card-body" id="slack-saved-list"><div class="loading">Loading...</div></div>
-    </div>
-
-    <div class="card card-followups">
-      <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">📬</span> Emails to Follow Up</h2>
-        <span class="badge warning" id="followups-badge">0</span>
-      </div>
-      <div class="card-body" id="followups-list"><div class="loading">Loading...</div></div>
-    </div>
-  </div>
-
-  <!-- NEWS TAB -->
-  <div class="tab-panel" id="tab-news">
-    <div class="card">
-      <div class="card-header">
-        <h2><span class="icon" style="background: rgba(180, 200, 225, 0.4);">📰</span> GamesIndustry.biz</h2>
-      </div>
-      <div class="card-body" id="news-list"><div class="loading">Loading news...</div></div>
+      <div class="tab-pane active" id="releases-tab"><div class="loading">Loading releases...</div></div>
+      <div class="tab-pane" id="all-releases-tab"><div class="loading">Loading...</div></div>
+      <div class="tab-pane" id="ooo-tab"><div class="loading">Loading...</div></div>
     </div>
   </div>
 
   <script>
     const REFRESH_INTERVAL = 60000;
 
-    // --- Tab Switching ---
-    document.querySelectorAll('.tab-btn').forEach(btn => {
+    // --- Section Tab Switching ---
+    document.querySelectorAll('.section-tab').forEach(btn => {
       btn.addEventListener('click', () => {
-        document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        const group = btn.dataset.group;
+        // Deactivate siblings in same group
+        document.querySelectorAll(`.section-tab[data-group="${group}"]`).forEach(t => t.classList.remove('active'));
         btn.classList.add('active');
-        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+        // Toggle panes
+        const paneId = btn.dataset.section;
+        const card = btn.closest('.card');
+        card.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        card.querySelector('#' + paneId).classList.add('active');
       });
     });
 
-    // --- Clocks ---
-    const CLOCKS = [
-      { city: 'Amsterdam', tz: 'Europe/Amsterdam', label: 'CET' },
-      { city: 'London', tz: 'Europe/London' },
-      { city: 'New York', tz: 'America/New_York' },
-      { city: 'San Francisco', tz: 'America/Los_Angeles' },
+    // --- Interactive CSS 3D Globe ---
+    const CITIES = [
+      { city: 'San Francisco', tz: 'America/Los_Angeles', zone: 'PT' },
+      { city: 'Austin', tz: 'America/Chicago', zone: 'CT' },
+      { city: 'New York', tz: 'America/New_York', zone: 'ET' },
+      { city: 'London', tz: 'Europe/London', zone: 'GMT' },
+      { city: 'Amsterdam', tz: 'Europe/Amsterdam', zone: 'CET' },
+      { city: 'Tokyo', tz: 'Asia/Tokyo', zone: 'JST' },
     ];
 
-    function getTimeOfDayEmoji(hour) {
-      if (hour >= 6 && hour < 12) return '\u{1F305}';
-      if (hour >= 12 && hour < 17) return '\u{2600}\u{FE0F}';
-      if (hour >= 17 && hour < 21) return '\u{1F307}';
-      return '\u{1F319}';
+    function timeEmoji(h24) {
+      if (h24 >= 7 && h24 < 21) return '☀️';   // day (7am–9pm)
+      return '🌒';                              // night (9pm–7am)
     }
 
-    function buildClockSVG(hours, minutes, seconds) {
-      const h = (hours % 12) + minutes / 60, m = minutes + seconds / 60, s = seconds;
-      return `<svg viewBox="0 0 100 100" class="clock-face">
-        <circle cx="50" cy="50" r="48" fill="rgba(255,255,255,0.7)" stroke="rgba(0,0,0,0.12)" stroke-width="1.5"/>
-        ${[0,1,2,3,4,5,6,7,8,9,10,11].map(i => {
-          const a = i * 30 * Math.PI / 180, isMain = i % 3 === 0;
-          return `<line x1="${50 + (isMain?38:40) * Math.sin(a)}" y1="${50 - (isMain?38:40) * Math.cos(a)}" x2="${50 + 44 * Math.sin(a)}" y2="${50 - 44 * Math.cos(a)}" stroke="rgba(0,0,0,0.3)" stroke-width="${isMain?2:1}" stroke-linecap="round"/>`;
-        }).join('')}
-        <line x1="50" y1="50" x2="${50 + 24 * Math.sin(h*30*Math.PI/180)}" y2="${50 - 24 * Math.cos(h*30*Math.PI/180)}" stroke="#1d1d1f" stroke-width="3" stroke-linecap="round"/>
-        <line x1="50" y1="50" x2="${50 + 34 * Math.sin(m*6*Math.PI/180)}" y2="${50 - 34 * Math.cos(m*6*Math.PI/180)}" stroke="#1d1d1f" stroke-width="2" stroke-linecap="round"/>
-        <line x1="50" y1="50" x2="${50 + 36 * Math.sin(s*6*Math.PI/180)}" y2="${50 - 36 * Math.cos(s*6*Math.PI/180)}" stroke="#ff3b30" stroke-width="0.8" stroke-linecap="round"/>
-        <circle cx="50" cy="50" r="2.5" fill="#1d1d1f"/>
-      </svg>`;
-    }
-
-    function updateClocks() {
-      const strip = document.getElementById('clocks-strip');
+    function initTimezones() {
+      const widget = document.getElementById('tz-widget');
+      widget.innerHTML = '';
       const now = new Date();
-      strip.innerHTML = CLOCKS.map(c => {
-        const timeStr = now.toLocaleTimeString('en-US', { timeZone: c.tz, hour: '2-digit', minute: '2-digit', hour12: true });
-        const [time, period] = timeStr.split(' ');
-        const dateStr = now.toLocaleDateString('en-US', { timeZone: c.tz, weekday: 'short', month: 'short', day: 'numeric' });
-        const tzAbbr = c.label || now.toLocaleString('en-US', { timeZone: c.tz, timeZoneName: 'short' }).split(' ').pop();
-        const lp = now.toLocaleString('en-US', { timeZone: c.tz, hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: false }).split(':');
-        const h = parseInt(lp[0])||0, m = parseInt(lp[1])||0, s = parseInt(lp[2])||0;
-        return `<div class="clock-item">${buildClockSVG(h,m,s)}<div class="clock-info"><div class="clock-city-row"><span class="clock-city">${c.city}</span><span class="clock-tz">(${tzAbbr})</span><span class="clock-tod">${getTimeOfDayEmoji(h)}</span></div><div class="clock-digital"><span class="clock-time">${time}</span><span class="clock-period">${period||''}</span></div><div class="clock-date">${dateStr}</div></div></div>`;
-      }).join('');
+
+      CITIES.forEach((c, i) => {
+        const row = document.createElement('div');
+        row.className = 'tz-row';
+
+        const localStr = now.toLocaleTimeString('en-US', { timeZone: c.tz, hour: '2-digit', minute: '2-digit', hour12: true });
+        const h24 = parseInt(now.toLocaleTimeString('en-GB', { timeZone: c.tz, hour: '2-digit', hour12: false }));
+        const m = parseInt(now.toLocaleTimeString('en-GB', { timeZone: c.tz, minute: '2-digit' }));
+        const fracOfDay = (h24 + m / 60) / 24;
+
+        const label = document.createElement('div');
+        label.className = 'tz-label';
+        label.innerHTML = `<div class="tz-city">${c.city} <span class="tz-zone">${c.zone}</span></div><div class="tz-time" id="tz-time-${i}"><span class="tz-emoji">${timeEmoji(h24)}</span> ${localStr}</div>`;
+
+        const barWrap = document.createElement('div');
+        barWrap.className = 'tz-bar-wrap';
+
+        // Daylight band (~6am–8pm)
+        const dayBar = document.createElement('div');
+        dayBar.className = 'tz-bar-day';
+        dayBar.style.left = '25%';
+        dayBar.style.width = '58.3%';
+
+        // Work hours band (9am–6pm)
+        const workBar = document.createElement('div');
+        workBar.className = 'tz-bar-work';
+        workBar.style.left = '37.5%';
+        workBar.style.width = '37.5%';
+
+        // Hour marks every 3h
+        const marks = document.createElement('div');
+        marks.className = 'tz-hour-marks';
+        for (let h = 0; h <= 24; h += 3) {
+          const pct = (h / 24) * 100;
+          const mark = document.createElement('div');
+          mark.className = 'tz-hour-mark';
+          mark.style.left = pct + '%';
+          marks.appendChild(mark);
+          if (h < 24 && h % 6 === 0) {
+            const lbl = document.createElement('div');
+            lbl.className = 'tz-hour-label';
+            lbl.style.left = pct + '%';
+            lbl.textContent = h === 0 ? '12a' : h === 6 ? '6a' : h === 12 ? '12p' : '6p';
+            marks.appendChild(lbl);
+          }
+        }
+
+        // Now dot
+        const nowDot = document.createElement('div');
+        nowDot.className = 'tz-now';
+        nowDot.id = 'tz-now-' + i;
+        nowDot.style.left = (fracOfDay * 100) + '%';
+
+        barWrap.appendChild(dayBar);
+        barWrap.appendChild(workBar);
+        barWrap.appendChild(marks);
+        barWrap.appendChild(nowDot);
+        row.appendChild(label);
+        row.appendChild(barWrap);
+        widget.appendChild(row);
+      });
+
+      setInterval(updateTimezones, 30000);
     }
-    updateClocks(); setInterval(updateClocks, 1000);
+
+    function updateTimezones() {
+      const now = new Date();
+      CITIES.forEach((c, i) => {
+        const timeEl = document.getElementById('tz-time-' + i);
+        const nowEl = document.getElementById('tz-now-' + i);
+        if (!timeEl || !nowEl) return;
+        const localStr = now.toLocaleTimeString('en-US', { timeZone: c.tz, hour: '2-digit', minute: '2-digit', hour12: true });
+        const h24 = parseInt(now.toLocaleTimeString('en-GB', { timeZone: c.tz, hour: '2-digit', hour12: false }));
+        const m = parseInt(now.toLocaleTimeString('en-GB', { timeZone: c.tz, minute: '2-digit' }));
+        timeEl.innerHTML = `<span class="tz-emoji">${timeEmoji(h24)}</span> ${localStr}`;
+        nowEl.style.left = ((h24 + m / 60) / 24 * 100) + '%';
+      });
+    }
+
+    requestAnimationFrame(() => initTimezones());
 
     // --- Helpers ---
     function formatTime(d) { return d ? new Date(d).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''; }
     function formatDate(ts) { if (!ts) return ''; const diff = Math.ceil((new Date(parseInt(ts)) - new Date()) / 864e5); return diff < 0 ? `${-diff}d overdue` : diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : `In ${diff}d`; }
-    function formatSavedDate(ts) { if (!ts) return ''; const d = Math.floor((Date.now()-ts*1000)/864e5); return d===0?'today':d===1?'yesterday':d<7?d+'d ago':d<30?Math.floor(d/7)+'w ago':Math.floor(d/30)+'mo ago'; }
     function formatEmailDate(d) { if (!d) return ''; const ms=Date.now()-new Date(d), h=Math.floor(ms/36e5); return h<1?Math.max(1,Math.floor(ms/6e4))+'m ago':h<24?h+'h ago':h<48?'yesterday':h<168?Math.floor(h/24)+'d ago':new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric'}); }
     function fmtMins(m) { return m >= 60 ? `${Math.floor(m/60)}h ${(r=Math.round(m%60))>0?r+'m':''}`.trim() : Math.round(m)+'m'; }
     function parseFrom(f) { const m = f.match(/^"?([^"<]+)"?\s*</); return m ? m[1].trim() : f.split('@')[0]; }
     function priorityStyle(p) { return {urgent:{bg:'rgba(255,59,48,0.12)',color:'#d70015'},high:{bg:'rgba(255,149,0,0.12)',color:'#c77c00'},normal:{bg:'rgba(0,122,255,0.12)',color:'#0055d4'},low:{bg:'rgba(0,0,0,0.05)',color:'#86868b'}}[p]||{bg:'rgba(0,122,255,0.12)',color:'#0055d4'}; }
     async function fetchJSON(url) { try { return await (await fetch(url)).json(); } catch(e) { return {error:e.message}; } }
 
+    // --- Invite Response ---
+    async function respondInvite(eventId, response, btn) {
+      const row = btn.closest('.invite-item');
+      row.querySelectorAll('.invite-btn').forEach(b => b.disabled = true);
+      btn.textContent = '...';
+      try {
+        const res = await fetch('/api/calendar/respond', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ eventId, response }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          const labels = { accepted: 'Accepted', tentative: 'Maybe', declined: 'Declined' };
+          const colors = { accepted: '#34c759', tentative: '#ff9500', declined: '#ff3b30' };
+          row.querySelector('.invite-actions').innerHTML = `<span style="font-size:11px;font-weight:600;color:${colors[response]}">${labels[response]}</span>`;
+          // Fade out after a moment
+          setTimeout(() => { row.style.opacity = '0.4'; }, 1000);
+        } else {
+          btn.textContent = 'Error';
+          setTimeout(() => { row.querySelectorAll('.invite-btn').forEach(b => b.disabled = false); btn.textContent = response === 'accepted' ? 'Yes' : response === 'tentative' ? 'Maybe' : 'No'; }, 2000);
+        }
+      } catch (e) {
+        btn.textContent = 'Error';
+      }
+    }
+
+    // --- OOO Colors ---
+    const OOO_COLORS = ['#007aff','#34c759','#ff9500','#af52de','#ff3b30','#5ac8fa','#ff2d55','#ffcc00','#30b0c7','#a2845e'];
+
     // --- Refresh Functions ---
 
     async function refreshCalendar() {
       const data = await fetchJSON('/api/calendar/today');
-      const ec = document.getElementById('calendar-events');
-      const ic = document.getElementById('pending-invites');
+      const ec = document.getElementById('events-tab');
+      const ic = document.getElementById('invites-tab');
       if (data.error) { ec.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
 
       if (!data.events || !data.events.length) { ec.innerHTML = '<div class="card-body empty">No events today</div>'; }
@@ -534,7 +586,7 @@
         ec.innerHTML = html;
       }
 
-      document.getElementById('calendar-badge').textContent = (data.events||[]).length;
+      document.getElementById('events-tab-badge').textContent = (data.events||[]).length;
       document.getElementById('stat-meetings').textContent = data.meetingCount || 0;
       document.getElementById('stat-meeting-time').textContent = fmtMins(data.meetingMinutes || 0);
 
@@ -558,7 +610,7 @@
       const wm = data.weeklyMeetingMinutes||0, lm = data.lastWeekMeetingMinutes||0;
       document.getElementById('stat-weekly-meeting-time').textContent = fmtMins(wm);
       const ce = document.getElementById('stat-week-change');
-      if (lm > 0) { const p = Math.round(((wm-lm)/lm)*100); ce.textContent = p>0?`▲ ${p}%`:p<0?`▼ ${-p}%`:'— same'; ce.style.color = p>0?'#ff3b30':p<0?'#34c759':'#6e6e73'; }
+      if (lm > 0) { const p = Math.round(((wm-lm)/lm)*100); ce.textContent = p>0?`▲ ${p}% vs last week`:p<0?`▼ ${-p}% vs last week`:'— same as last week'; ce.style.color = p>0?'#ff3b30':p<0?'#34c759':'#6e6e73'; }
 
       const bd = data.weeklyBreakdown||[], ch = document.getElementById('weekly-chart');
       if (bd.length > 1) {
@@ -577,55 +629,121 @@
       }
 
       // Invites
-      if (!data.pendingInvites?.length) ic.innerHTML = '<div class="card-body empty">No pending invites</div>';
+      const inviteCount = data.pendingInvites?.length||0;
+      document.getElementById('invites-tab-badge').textContent = inviteCount;
+      if (!inviteCount) ic.innerHTML = '<div class="card-body empty">No pending invites</div>';
       else ic.innerHTML = data.pendingInvites.map(e => {
         const ms = new Date(e.start)-new Date(), h=ms/36e5, d=Math.ceil(ms/864e5);
         const cd = ms<=0?'Today':h<24?`in ${Math.floor(h)}h`:d===1?'Tomorrow':`in ${d}d`;
-        return `<div class="invite-item"><div class="invite-info"><a class="invite-name" href="${e.htmlLink}" target="_blank">${e.summary||'No title'}</a><div class="invite-meta">${formatTime(e.start)} · From: ${e.organizer||'Unknown'}</div></div><span class="release-countdown">${cd}</span></div>`;
+        return `<div class="invite-item" id="invite-${e.id}"><div class="invite-info"><a class="invite-name" href="${e.htmlLink}" target="_blank">${e.summary||'No title'}</a><div class="invite-meta">${formatTime(e.start)} · ${cd} · From: ${e.organizer||'Unknown'}</div></div><div class="invite-actions"><button class="invite-btn accept" onclick="respondInvite('${e.id}','accepted',this)">Yes</button><button class="invite-btn tentative" onclick="respondInvite('${e.id}','tentative',this)">Maybe</button><button class="invite-btn decline" onclick="respondInvite('${e.id}','declined',this)">No</button></div></div>`;
       }).join('');
-      const ic2 = data.pendingInvites?.length||0;
-      document.getElementById('invites-badge').textContent = ic2;
-      if (ic2>0) document.getElementById('invites-badge').classList.add('warning');
+    }
+
+    async function refreshMeetingNotes() {
+      const data = await fetchJSON('/api/weekly-summary');
+      const c = document.getElementById('notes-tab');
+      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
+      if (!data.meetings?.length) { c.innerHTML = '<div class="card-body empty">No meeting notes this week</div>'; return; }
+      c.innerHTML = data.meetings.map(m => {
+        const sl = m.source==='fireflies'?'Fireflies':'Gemini';
+        let st='';
+        if (m.source==='fireflies'&&m.summary) st=m.summary.substring(0,400)+(m.summary.length>150?'...':'');
+        else if (m.source==='gemini'&&m.content) { const l=m.content.split('\n').filter(l=>l.trim().length>10); st=l.slice(0,3).join(' ').substring(0,500); if(st.length>=150)st+='...'; }
+        const lk = m.link?`<a href="${m.link}" target="_blank" style="text-decoration:none;color:inherit;">`:'';
+        return `<div class="weekly-meeting-block"><div class="weekly-meeting-header"><span class="weekly-meeting-source ${m.source}">${sl}</span>${lk}<span class="weekly-meeting-title">${m.title}</span>${m.link?'</a>':''}<span class="weekly-meeting-date">${m.date}${m.duration?' · '+m.duration:''}</span></div>${st?`<div class="weekly-meeting-summary">${st}</div>`:''}</div>`;
+      }).join('');
     }
 
     async function refreshTeamOOO() {
       const data = await fetchJSON('/api/calendar/team-ooo');
-      const c = document.getElementById('team-ooo-list');
+      const c = document.getElementById('ooo-tab');
       if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
-      if (!data.ooo?.length) { c.innerHTML = '<div class="card-body empty">No one OOO this week</div>'; return; }
-      c.innerHTML = data.ooo.map(o => {
-        const start = o.isAllDay ? new Date(o.start).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : formatTime(o.start);
-        const end = o.isAllDay ? new Date(o.end).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : formatTime(o.end);
-        return `<div class="ooo-item"><span style="font-size:14px">🏖️</span><span class="ooo-name">${o.name}</span><span class="ooo-dates">${start} – ${end}</span></div>`;
-      }).join('');
+      const oooList = data.ooo || [];
+      if (!oooList.length) { c.innerHTML = '<div class="card-body empty">No team OOO</div>'; return; }
+
+      // Build timeline: show 4 weeks window (1 week before, 3 weeks after)
+      const now = new Date();
+      const dayMs = 864e5;
+      const timelineStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7);
+      const timelineEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 21);
+      const totalDays = Math.round((timelineEnd - timelineStart) / dayMs);
+
+      // Unique people
+      const people = [...new Set(oooList.map(o => o.name))];
+      const colorMap = {};
+      people.forEach((p, i) => colorMap[p] = OOO_COLORS[i % OOO_COLORS.length]);
+
+      // Date header labels (every 7 days)
+      let dateLabels = '';
+      for (let d = 0; d <= totalDays; d += 7) {
+        const dt = new Date(timelineStart.getTime() + d * dayMs);
+        dateLabels += `<span>${dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>`;
+      }
+
+      // Today marker position
+      const todayPct = ((now - timelineStart) / dayMs / totalDays * 100);
+
+      // Helper: count working days (Mon-Fri) between two dates
+      function countWorkDays(start, end) {
+        let count = 0;
+        const d = new Date(start);
+        while (d < end) {
+          const dow = d.getDay();
+          if (dow !== 0 && dow !== 6) count++;
+          d.setDate(d.getDate() + 1);
+        }
+        return count;
+      }
+
+      // Build rows per person — skip if no bars visible in window
+      let rows = '';
+      people.forEach(name => {
+        const entries = oooList.filter(o => o.name === name);
+        let bars = '';
+        let hasVisibleBar = false;
+        entries.forEach(o => {
+          const s = new Date(o.start), e = new Date(o.end);
+          const startDay = Math.max(0, (s - timelineStart) / dayMs);
+          const endDay = Math.min(totalDays, (e - timelineStart) / dayMs);
+          if (endDay <= 0 || startDay >= totalDays) return;
+          hasVisibleBar = true;
+          const leftPct = (startDay / totalDays * 100).toFixed(2);
+          const widthPct = ((endDay - startDay) / totalDays * 100).toFixed(2);
+          const fmt = { weekday: 'long', month: 'long', day: 'numeric' };
+          const startLabel = s.toLocaleDateString('en-US', fmt);
+          const endDate = new Date(e.getTime() - dayMs);
+          const endLabel = endDate.toLocaleDateString('en-US', fmt);
+          const workDays = countWorkDays(s, e);
+          const tooltip = `${startLabel} to ${endLabel} (${workDays} work day${workDays !== 1 ? 's' : ''})`;
+          bars += `<div class="ooo-tl-bar" style="left:${leftPct}%;width:${widthPct}%;background:${colorMap[name]};opacity:0.7" title="${tooltip}"></div>`;
+        });
+        if (!hasVisibleBar) return; // Skip rows with no bars in current view
+        rows += `<div class="ooo-timeline-row"><span class="ooo-tl-name">${name}</span><div class="ooo-tl-track">${bars}<div class="ooo-tl-today" style="left:${todayPct.toFixed(2)}%"></div></div></div>`;
+      });
+
+      c.innerHTML = `<div class="ooo-timeline"><div class="ooo-timeline-dates">${dateLabels}</div>${rows}</div>`;
+    }
+
+    function renderReleaseItem(r, now) {
+      let ds='TBD', cd='';
+      if (r.date) { const d=new Date(r.date); ds=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); const ms=d-now,h=ms/36e5,dd=Math.ceil(ms/864e5); cd=ms<=0?'Today':h<24?`In ${Math.floor(h)}h`:dd===1?'Tomorrow':`In ${dd}d`; }
+      const st = r.status?`<span class="release-status" style="background:${r.statusColor}22;color:${r.statusColor}">${r.status}</span>`:'';
+      const cat = r.category?`<span class="release-category">${r.category}</span>`:'';
+      return `<div class="release-item"><div class="release-date">${ds}</div><a class="release-name" href="${r.url}" target="_blank">${r.name}</a>${st}${cat}${cd?`<span class="release-countdown">${cd}</span>`:''}</div>`;
     }
 
     async function refreshReleases() {
       const data = await fetchJSON('/api/releases');
-      const c = document.getElementById('releases-list');
-      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
-      if (!data.releases?.length) { c.innerHTML = '<div class="card-body empty">No upcoming releases</div>'; return; }
-      const now = new Date();
-      c.innerHTML = data.releases.map(r => {
-        let ds='TBD', cd='';
-        if (r.date) { const d=new Date(r.date); ds=d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); const ms=d-now,h=ms/36e5,dd=Math.ceil(ms/864e5); cd=ms<=0?'Today':h<24?`In ${Math.floor(h)}h`:dd===1?'Tomorrow':`In ${dd}d`; }
-        const st = r.status?`<span class="release-status" style="background:${r.statusColor}22;color:${r.statusColor}">${r.status}</span>`:'';
-        const cat = r.category?`<span class="release-category">${r.category}</span>`:'';
-        return `<div class="release-item"><div class="release-date">${ds}</div><a class="release-name" href="${r.url}" target="_blank">${r.name}</a>${st}${cat}${cd?`<span class="release-countdown">${cd}</span>`:''}</div>`;
-      }).join('');
-    }
+      const rc = document.getElementById('releases-tab');
+      const ac = document.getElementById('all-releases-tab');
+      if (data.error) { rc.innerHTML = ac.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
 
-    async function refreshClickUpTasks() {
-      const data = await fetchJSON('/api/clickup/tasks');
-      const c = document.getElementById('clickup-tasks-list');
-      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
-      if (!data.tasks?.length) { c.innerHTML = '<div class="card-body empty">No tasks assigned</div>'; return; }
-      c.innerHTML = data.tasks.map(t => {
-        const ps = t.priority?priorityStyle(t.priority):null;
-        const ph = ps?`<span class="task-priority" style="background:${ps.bg};color:${ps.color}">${t.priority}</span>`:'';
-        const meta = [t.list, t.dueDate?formatDate(t.dueDate):''].filter(Boolean).join(' · ');
-        return `<div class="task-item"><div class="task-status" style="background:${t.statusColor||'#86868b'}"></div><div class="task-info"><a class="task-name" href="${t.url}" target="_blank">${t.name}</a>${meta?`<div class="task-meta">${meta}</div>`:''}</div>${ph}</div>`;
-      }).join('');
+      const now = new Date();
+      const releases = data.releases || [];
+      const allEvents = data.allEvents || [];
+
+      rc.innerHTML = releases.length ? releases.map(r => renderReleaseItem(r, now)).join('') : '<div class="card-body empty">No upcoming releases</div>';
+      ac.innerHTML = allEvents.length ? allEvents.map(r => renderReleaseItem(r, now)).join('') : '<div class="card-body empty">No events</div>';
     }
 
     async function refreshHighLevel() {
@@ -640,30 +758,9 @@
       c.innerHTML = h;
     }
 
-    async function refreshWeeklySummary() {
-      const data = await fetchJSON('/api/weekly-summary');
-      const c = document.getElementById('weekly-summary');
-      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
-      if (!data.meetings?.length) { c.innerHTML = '<div class="card-body empty">No meeting notes this week</div>'; return; }
-      c.innerHTML = data.meetings.map(m => {
-        const sl = m.source==='fireflies'?'Fireflies':'Gemini';
-        let st='';
-        if (m.source==='fireflies'&&m.summary) st=m.summary.substring(0,150)+(m.summary.length>150?'...':'');
-        else if (m.source==='gemini'&&m.content) { const l=m.content.split('\n').filter(l=>l.trim().length>10); st=l.slice(0,2).join(' ').substring(0,150); if(st.length>=150)st+='...'; }
-        const lk = m.link?`<a href="${m.link}" target="_blank" style="text-decoration:none;color:inherit;">`:'';
-        return `<div class="weekly-meeting-block"><div class="weekly-meeting-header"><span class="weekly-meeting-source ${m.source}">${sl}</span>${lk}<span class="weekly-meeting-title">${m.title}</span>${m.link?'</a>':''}<span class="weekly-meeting-date">${m.date}${m.duration?' · '+m.duration:''}</span></div>${st?`<div class="weekly-meeting-summary">${st}</div>`:''}</div>`;
-      }).join('');
-    }
-
     async function refreshSlack() {
-      const [sd, ud] = await Promise.all([fetchJSON('/api/slack/todos'), fetchJSON('/api/slack/unread')]);
-      if (!sd.error) document.getElementById('stat-slack-saved').textContent = sd.count||0;
+      const ud = await fetchJSON('/api/slack/unread');
       if (!ud.error) document.getElementById('stat-slack-unreads').textContent = ud.total||0;
-
-      const sc = document.getElementById('slack-saved-list');
-      if (sd.error) { sc.innerHTML = `<div class="error-msg">&#9888; ${sd.error}</div>`; }
-      else if (!sd.items?.length) { sc.innerHTML = '<div class="card-body empty">No saved items</div>'; }
-      else { sc.innerHTML = sd.items.map(i => `<div class="saved-item"><div class="saved-item-header">${i.channel?`<span class="saved-item-channel">#${i.channel}</span>`:''}${i.user?`<span style="font-size:11px;color:#6e6e73">${i.user}</span>`:''}<span class="saved-item-date">${formatSavedDate(i.date)}</span></div><div class="saved-item-preview">${i.text||'(no content)'}</div></div>`).join(''); }
     }
 
     async function refreshEmail() {
@@ -671,34 +768,83 @@
       if (!data.error) { const e=document.getElementById('stat-email'); e.textContent=data.unread||0; if(data.unread>10)e.style.color='#ff3b30'; }
     }
 
-    async function refreshInbox() {
-      const data = await fetchJSON('/api/gmail/inbox');
-      const c = document.getElementById('inbox-list');
-      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
-      if (!data.messages?.length) { c.innerHTML = '<div class="card-body empty">No unread emails</div>'; return; }
-      document.getElementById('inbox-badge').textContent = data.messages.length;
-      c.innerHTML = data.messages.map(m => `<div class="email-item unread"><div class="email-dot"></div><div class="email-info"><div class="email-subject">${m.subject||'(no subject)'}</div><div class="email-from">${parseFrom(m.from)}</div><div class="email-snippet">${m.snippet||''}</div></div><div class="email-date">${formatEmailDate(m.date)}</div></div>`).join('');
-    }
-
     async function refreshFollowups() {
       const data = await fetchJSON('/api/gmail/followups');
-      const c = document.getElementById('followups-list');
+      const c = document.getElementById('followups-tab');
       if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
       if (!data.messages?.length) { c.innerHTML = '<div class="card-body empty">No follow-ups needed</div>'; return; }
       document.getElementById('followups-badge').textContent = data.count||0;
-      c.innerHTML = data.messages.map(m => `<div class="email-item unread"><div class="email-dot"></div><div class="email-info"><div class="email-subject">${m.subject||'(no subject)'}</div><div class="email-from">${parseFrom(m.from)}</div><div class="email-snippet">${m.snippet||''}</div></div><div class="email-date">${formatEmailDate(m.date)}</div></div>`).join('');
-    }
-
-    async function refreshNews() {
-      const data = await fetchJSON('/api/news');
-      const c = document.getElementById('news-list');
-      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
-      if (!data.items?.length) { c.innerHTML = '<div class="card-body empty">No news available</div>'; return; }
-      c.innerHTML = data.items.map(n => {
-        const d = n.pubDate ? new Date(n.pubDate).toLocaleDateString('en-US', {month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '';
-        return `<div class="news-item"><a class="news-title" href="${n.link}" target="_blank">${n.title}</a><div class="news-desc">${n.description}</div>${d?`<div class="news-date">${d}</div>`:''}</div>`;
+      c.innerHTML = data.messages.map(m => {
+        const gmailLink = m.threadId ? `https://mail.google.com/mail/u/0/#inbox/${m.threadId}` : (m.id ? `https://mail.google.com/mail/u/0/#inbox/${m.id}` : '');
+        const clickStyle = gmailLink ? ' style="cursor:pointer" onclick="window.open(\'' + gmailLink + '\', \'_blank\')"' : '';
+        return `<div class="email-item unread"${clickStyle}><div class="email-dot"></div><div class="email-info"><div class="email-subject">${m.subject||'(no subject)'}</div><div class="email-from">${parseFrom(m.from)}</div><div class="email-snippet">${m.snippet||''}</div></div><div class="email-date">${formatEmailDate(m.date)}</div></div>`;
       }).join('');
     }
+
+    async function refreshClickUpTasks() {
+      const data = await fetchJSON('/api/clickup/tasks');
+      const c = document.getElementById('clickup-tab');
+      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
+      if (!data.tasks?.length) { c.innerHTML = '<div class="card-body empty">No tasks assigned</div>'; return; }
+      c.innerHTML = data.tasks.map(t => {
+        const ps = t.priority?priorityStyle(t.priority):null;
+        const ph = ps?`<span class="task-priority" style="background:${ps.bg};color:${ps.color}">${t.priority}</span>`:'';
+        const meta = [t.list, t.dueDate?formatDate(t.dueDate):''].filter(Boolean).join(' · ');
+        return `<div class="task-item"><div class="task-status" style="background:${t.statusColor||'#86868b'}"></div><div class="task-info"><a class="task-name" href="${t.url}" target="_blank">${t.name}</a>${meta?`<div class="task-meta">${meta}</div>`:''}</div>${ph}</div>`;
+      }).join('');
+    }
+
+    function formatSavedDate(ts) { if (!ts) return ''; const d = Math.floor((Date.now()-ts*1000)/864e5); return d===0?'today':d===1?'yesterday':d<7?d+'d ago':d<30?Math.floor(d/7)+'w ago':Math.floor(d/30)+'mo ago'; }
+
+    let slackDomain = '';
+
+    function renderSavedItem(i) {
+      const ago = formatSavedDate(i.msgTs || i.date);
+      // Slack archive URL: domain/archives/CHANNEL/pTIMESTAMP — opens in Slack app
+      const msgId = i.ts ? 'p' + i.ts.replace('.', '') : '';
+      const slackLink = slackDomain && i.channelId && msgId ? `${slackDomain}/archives/${i.channelId}/${msgId}` : '';
+      const clickAttr = slackLink ? ` onclick="window.open('${slackLink}')"` : '';
+      return `<div class="saved-item"${clickAttr}><div class="saved-item-header">${i.channel?`<span class="saved-item-channel">#${i.channel}</span>`:''}<span class="saved-item-sender">${i.user||''}</span><span class="saved-item-date">${ago}</span></div><div class="saved-item-preview">${i.text||'(no content)'}</div></div>`;
+    }
+
+    let slackSavedCursor = '';
+    let slackSavedLoading = false;
+
+    async function refreshSlackSaved() {
+      slackSavedCursor = '';
+      const data = await fetchJSON('/api/slack/todos?limit=20');
+      if (data.slackDomain) slackDomain = data.slackDomain;
+      const c = document.getElementById('slack-saved-tab');
+      const badge = document.getElementById('slack-saved-badge');
+      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
+      if (!data.items?.length) { c.innerHTML = '<div class="card-body empty">No saved items</div>'; return; }
+      if (badge) badge.textContent = data.count || data.items.length;
+      slackSavedCursor = data.nextCursor || '';
+      c.innerHTML = data.items.map(renderSavedItem).join('') + (slackSavedCursor ? '<div class="loading slack-saved-loader">Loading more...</div>' : '');
+    }
+
+    async function loadMoreSlackSaved() {
+      if (slackSavedLoading || !slackSavedCursor) return;
+      slackSavedLoading = true;
+      const data = await fetchJSON(`/api/slack/todos?limit=20&cursor=${encodeURIComponent(slackSavedCursor)}`);
+      slackSavedLoading = false;
+      if (data.slackDomain) slackDomain = data.slackDomain;
+      if (data.error || !data.items?.length) { slackSavedCursor = ''; return; }
+      slackSavedCursor = data.nextCursor || '';
+      const c = document.getElementById('slack-saved-tab');
+      // Remove loader
+      const loader = c.querySelector('.slack-saved-loader');
+      if (loader) loader.remove();
+      // Append new items
+      c.insertAdjacentHTML('beforeend', data.items.map(renderSavedItem).join('') + (slackSavedCursor ? '<div class="loading slack-saved-loader">Loading more...</div>' : ''));
+    }
+
+    // Infinite scroll for slack saved tab
+    document.getElementById('slack-saved-tab').addEventListener('scroll', function() {
+      if (this.scrollTop + this.clientHeight >= this.scrollHeight - 100) {
+        loadMoreSlackSaved();
+      }
+    });
 
     function updateWeekInfo() {
       const now = new Date(), d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
@@ -714,10 +860,9 @@
 
     async function refreshAll() {
       await Promise.all([
-        refreshCalendar(), refreshTeamOOO(), refreshReleases(),
-        refreshClickUpTasks(), refreshHighLevel(), refreshWeeklySummary(),
-        refreshSlack(), refreshEmail(), refreshInbox(), refreshFollowups(),
-        refreshNews(),
+        refreshCalendar(), refreshMeetingNotes(), refreshTeamOOO(), refreshReleases(),
+        refreshClickUpTasks(), refreshSlackSaved(),
+        refreshSlack(), refreshEmail(), refreshFollowups(),
       ]);
       document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
