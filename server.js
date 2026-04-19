@@ -80,6 +80,81 @@ app.get('/api/clickup/notifications', async (req, res) => {
   }
 });
 
+// --- ClickUp Daily Summary doc ---
+// Source doc: https://app.clickup.com/9011099466/v/dc/8chmxua-60531/8chmxua-142091
+// Doc ID: 8chmxua-60531  (parent page "Daily summaries" contains one child page per day)
+app.get('/api/clickup/daily-summary', async (req, res) => {
+  try {
+    const token = process.env.CLICKUP_API_TOKEN;
+    const teamId = process.env.CLICKUP_TEAM_ID;
+    if (!token || !teamId) return res.json({ error: 'No ClickUp token configured' });
+
+    const DOC_ID = '8chmxua-60531';
+    const authHeaders = { headers: { Authorization: token } };
+
+    // 1) List all pages in the doc (flatten nested structure)
+    const listResp = await fetch(
+      `https://api.clickup.com/api/v3/workspaces/${teamId}/docs/${DOC_ID}/pageListing?max_page_depth=-1`,
+      authHeaders
+    );
+    if (!listResp.ok) return res.json({ error: `pageListing HTTP ${listResp.status}` });
+    const listData = await listResp.json();
+    const flat = [];
+    const walk = (arr) => { for (const p of (arr || [])) { flat.push(p); if (p.pages) walk(p.pages); } };
+    walk(Array.isArray(listData) ? listData : (listData.pages || []));
+
+    // 2) Find the page matching today by date in the title.
+    //    Daily pages are titled like: "Daily Brief — April 15, 2026"
+    const today = new Date();
+    const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const monthsShort = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const day = today.getDate();
+    const year = today.getFullYear();
+    const m = today.getMonth();
+    const candidates = [
+      `${months[m]} ${day}, ${year}`,
+      `${monthsShort[m]} ${day}, ${year}`,
+      `${months[m]} ${day} ${year}`,
+      `${monthsShort[m]} ${day} ${year}`,
+      today.toISOString().slice(0, 10),
+      `${m + 1}/${day}/${year}`,
+      `${day}/${m + 1}/${year}`,
+    ].map(s => s.toLowerCase());
+
+    const page = flat.find(p => {
+      const name = (p.name || '').toLowerCase();
+      return candidates.some(c => name.includes(c));
+    });
+
+    if (!page) {
+      return res.json({
+        notFound: true,
+        date: today.toISOString().slice(0, 10),
+        availablePages: flat.map(p => p.name),
+      });
+    }
+
+    // 3) Fetch the page content as markdown
+    const contentResp = await fetch(
+      `https://api.clickup.com/api/v3/workspaces/${teamId}/docs/${DOC_ID}/pages/${page.id}?content_format=text%2Fmd`,
+      authHeaders
+    );
+    if (!contentResp.ok) return res.json({ error: `page content HTTP ${contentResp.status}` });
+    const contentData = await contentResp.json();
+
+    res.json({
+      pageId: page.id,
+      pageName: page.name,
+      content: contentData.content || '',
+      dateUpdated: contentData.date_updated,
+      url: `https://app.clickup.com/${teamId}/v/dc/${DOC_ID}/${page.id}`,
+    });
+  } catch (err) {
+    console.error('ClickUp daily summary error:', err.message);
+    res.json({ error: err.message });
+  }
+});
+
 // --- Slack ---
 app.get('/api/slack/todos', async (req, res) => {
   try {

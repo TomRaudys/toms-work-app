@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tom's Work Dashboard</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💼</text></svg>">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -45,8 +45,8 @@
     /* Dashboard grid — single page, no top tabs */
     .dashboard {
       display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      grid-template-rows: auto 1fr;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+      grid-template-rows: auto minmax(0, 1fr);
       gap: 12px;
       height: calc(100vh - 52px);
       padding: 14px 24px;
@@ -73,6 +73,7 @@
       display: flex;
       flex-direction: column;
       min-height: 0;
+      min-width: 0;
     }
     .card-header {
       padding: 10px 16px;
@@ -153,12 +154,62 @@
     .tab-pane::-webkit-scrollbar-track { background: transparent; }
     .tab-pane::-webkit-scrollbar-thumb { background: rgba(0, 0, 0, 0.15); border-radius: 3px; }
 
+    /* Mobile dropdown (hidden on desktop) */
+    .section-dropdown {
+      display: none;
+      width: 100%;
+      padding: 7px 28px 7px 12px;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      color: #1d1d1f;
+      background-color: rgba(255, 255, 255, 0.7);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      cursor: pointer;
+      appearance: none;
+      -webkit-appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path fill='%236e6e73' d='M5 6L0 0h10z'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 10px;
+    }
+
+    /* Mobile layout */
+    @media (max-width: 768px) {
+      body { height: auto; overflow: auto; min-height: 100vh; }
+      .dashboard {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        overflow: visible;
+        padding: 12px;
+        gap: 12px;
+      }
+      .card {
+        grid-column: auto !important;
+        grid-row: auto !important;
+        flex-shrink: 0;
+      }
+      /* Cap scrollable panes so one doesn't dominate the page */
+      .card-body, .tab-pane { max-height: 65vh; }
+      /* Let summary and clocks auto-size to content */
+      .card-summary .card-body, .tz-widget { max-height: none; }
+      .tz-widget { padding: 14px; }
+      /* Swap tab pills for a dropdown */
+      .section-tabs { display: none; }
+      .section-dropdown { display: block; }
+      .card-header { padding: 10px 12px; }
+      .header { padding: 10px 16px; flex-wrap: wrap; gap: 6px; }
+      .header h1 { font-size: 18px; }
+    }
+
     /* Summary table */
     .card-summary .card-body { padding: 6px 16px; overflow: hidden; display: flex; flex-direction: column; }
     .summary-table { width: 100%; border-collapse: collapse; }
-    .summary-table td { padding: 5px 4px; font-size: 13px; white-space: nowrap; }
+    .summary-table td { padding: 5px 4px; font-size: 13px; }
     .summary-label { color: #6e6e73; font-weight: 500; }
-    .summary-value { font-weight: 700; color: #1d1d1f; font-size: 15px; text-align: right; padding-right: 16px !important; }
+    .summary-value { font-weight: 700; color: #1d1d1f; font-size: 15px; text-align: right; padding-right: 12px !important; white-space: nowrap; width: 1%; }
 
     /* Globe */
     .tz-widget { padding: 10px 14px; height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 0; }
@@ -221,10 +272,10 @@
     .invite-btn.decline { background: rgba(255, 59, 48, 0.12); color: #d70015; }
     .invite-btn.decline:hover { background: rgba(255, 59, 48, 0.25); }
     .invite-btn:disabled { opacity: 0.4; cursor: default; }
-    .release-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); }
+    .release-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(0, 0, 0, 0.06); min-width: 0; }
     .release-item:last-child { border-bottom: none; }
     .release-date { font-size: 11px; font-weight: 600; color: #007aff; min-width: 70px; flex-shrink: 0; }
-    .release-name { font-size: 13px; color: #1d1d1f; text-decoration: none; }
+    .release-name { font-size: 13px; color: #1d1d1f; text-decoration: none; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .release-name:hover { color: #007aff; }
     .release-status { font-size: 9px; font-weight: 600; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; }
     .release-category { font-size: 9px; color: #86868b; white-space: nowrap; flex-shrink: 0; }
@@ -260,13 +311,13 @@
     .email-info { flex: 1; min-width: 0; }
     .email-subject { font-size: 13px; color: #1d1d1f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .email-from { font-size: 11px; color: #6e6e73; margin-top: 1px; }
-    .email-snippet { font-size: 11px; color: #86868b; margin-top: 2px; display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+    .email-snippet { font-size: 11px; color: #86868b; margin-top: 3px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
     .email-date { font-size: 10px; color: #86868b; flex-shrink: 0; margin-top: 2px; }
 
     /* OOO timeline */
     .ooo-timeline { position: relative; padding: 0; }
-    .ooo-timeline-header { display: flex; align-items: center; gap: 4px; margin-bottom: 8px; }
-    .ooo-timeline-dates { display: flex; justify-content: space-between; font-size: 9px; color: #86868b; margin-bottom: 6px; padding: 0 2px; }
+    .ooo-timeline-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .ooo-timeline-dates { flex: 1; display: flex; justify-content: space-between; font-size: 9px; color: #86868b; padding: 0 2px; }
     .ooo-timeline-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
     .ooo-timeline-row:last-child { margin-bottom: 0; }
     .ooo-tl-name { font-size: 11px; font-weight: 600; color: #1d1d1f; min-width: 80px; max-width: 80px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
@@ -299,6 +350,26 @@
 
     .loading { color: #86868b; font-size: 13px; padding: 24px; text-align: center; }
     .error-msg { color: #c77c00; font-size: 13px; padding: 12px; text-align: center; background: rgba(255, 149, 0, 0.1); border-radius: 12px; margin: 8px; }
+
+    /* Daily Summary markdown rendering */
+    .daily-summary { font-size: 12.5px; color: #1d1d1f; line-height: 1.5; }
+    .daily-summary-meta { font-size: 11px; color: #86868b; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+    .daily-summary-meta a { color: #007aff; text-decoration: none; }
+    .daily-summary-meta a:hover { text-decoration: underline; }
+    .daily-summary h1 { font-size: 15px; font-weight: 700; margin: 12px 0 6px; color: #1d1d1f; }
+    .daily-summary h2 { font-size: 13.5px; font-weight: 700; margin: 14px 0 6px; color: #1d1d1f; padding-bottom: 4px; border-bottom: 1px solid rgba(0,0,0,0.08); }
+    .daily-summary h3 { font-size: 12.5px; font-weight: 600; margin: 10px 0 4px; color: #1d1d1f; }
+    .daily-summary h4 { font-size: 12px; font-weight: 600; margin: 8px 0 3px; color: #424245; }
+    .daily-summary p { margin: 4px 0; }
+    .daily-summary ul, .daily-summary ol { margin: 4px 0; padding-left: 20px; }
+    .daily-summary li { margin: 2px 0; }
+    .daily-summary strong { font-weight: 600; color: #1d1d1f; }
+    .daily-summary em { font-style: italic; color: #424245; }
+    .daily-summary code { font-family: ui-monospace, SFMono-Regular, monospace; background: rgba(0,0,0,0.05); padding: 1px 4px; border-radius: 3px; font-size: 11.5px; }
+    .daily-summary hr { border: none; border-top: 1px solid rgba(0,0,0,0.1); margin: 10px 0; }
+    .daily-summary a { color: #007aff; text-decoration: none; }
+    .daily-summary a:hover { text-decoration: underline; }
+    .daily-summary blockquote { border-left: 3px solid rgba(0,0,0,0.15); padding-left: 10px; margin: 6px 0; color: #424245; }
   </style>
 
 </head>
@@ -318,11 +389,13 @@
       <div class="card-header">
         <div class="section-tabs">
           <button class="section-tab active" data-section="events-tab" data-group="events">Events <span class="tab-badge" id="events-tab-badge">0</span></button>
+          <button class="section-tab" data-section="followups-tab" data-group="events">Priority Emails <span class="tab-badge warning" id="followups-badge">0</span></button>
           <button class="section-tab" data-section="invites-tab" data-group="events">Invites <span class="tab-badge" id="invites-tab-badge">0</span></button>
           <button class="section-tab" data-section="notes-tab" data-group="events">Meeting Notes</button>
         </div>
       </div>
       <div class="tab-pane active" id="events-tab"><div class="loading">Loading calendar...</div></div>
+      <div class="tab-pane" id="followups-tab"><div class="loading">Loading...</div></div>
       <div class="tab-pane" id="invites-tab"><div class="loading">Loading...</div></div>
       <div class="tab-pane" id="notes-tab"><div class="loading">Loading...</div></div>
     </div>
@@ -354,7 +427,7 @@
           </tr>
         </tbody></table>
         <hr style="border: none; border-top: 1px solid rgba(0,0,0,0.08); margin: 4px 0;">
-        <div id="weekly-chart" style="padding-top: 2px;"></div>
+        <div id="weekly-chart" style="padding-top: 22px;"></div>
         <div style="display: flex; justify-content: center; align-items: baseline; gap: 8px; margin-top: 6px;">
           <span id="stat-week-change" style="font-size: 11px; font-weight: 600;"></span>
         </div>
@@ -371,16 +444,16 @@
       </div>
     </div>
 
-    <!-- Emails + ClickUp Tasks tabbed (col2, row2 to bottom) -->
+    <!-- ClickUp Tasks + Slack Saved tabbed (col2, row2 to bottom) -->
     <div class="card card-followups-tabbed">
       <div class="card-header">
         <div class="section-tabs">
-          <button class="section-tab active" data-section="followups-tab" data-group="followups">Priority Emails <span class="tab-badge warning" id="followups-badge">0</span></button>
+          <button class="section-tab active" data-section="daily-summary-tab" data-group="followups">Daily Summary</button>
           <button class="section-tab" data-section="clickup-tab" data-group="followups">ClickUp Tasks <span class="tab-badge" id="clickup-badge">0</span></button>
           <button class="section-tab" data-section="slack-saved-tab" data-group="followups">Slack Saved <span class="tab-badge" id="slack-saved-badge">0</span></button>
         </div>
       </div>
-      <div class="tab-pane active" id="followups-tab"><div class="loading">Loading...</div></div>
+      <div class="tab-pane active" id="daily-summary-tab"><div class="loading">Loading daily summary...</div></div>
       <div class="tab-pane" id="clickup-tab"><div class="loading">Loading tasks...</div></div>
       <div class="tab-pane" id="slack-saved-tab"><div class="loading">Loading saved messages...</div></div>
     </div>
@@ -404,19 +477,51 @@
     const REFRESH_INTERVAL = 60000;
 
     // --- Section Tab Switching ---
+    function activateTab(paneId) {
+      const btn = document.querySelector(`.section-tab[data-section="${paneId}"]`);
+      if (!btn) return;
+      const group = btn.dataset.group;
+      document.querySelectorAll(`.section-tab[data-group="${group}"]`).forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+      const card = btn.closest('.card');
+      card.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      const pane = card.querySelector('#' + paneId);
+      if (pane) pane.classList.add('active');
+      const select = card.querySelector('.section-dropdown');
+      if (select && select.value !== paneId) select.value = paneId;
+    }
     document.querySelectorAll('.section-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const group = btn.dataset.group;
-        // Deactivate siblings in same group
-        document.querySelectorAll(`.section-tab[data-group="${group}"]`).forEach(t => t.classList.remove('active'));
-        btn.classList.add('active');
-        // Toggle panes
-        const paneId = btn.dataset.section;
-        const card = btn.closest('.card');
-        card.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-        card.querySelector('#' + paneId).classList.add('active');
-      });
+      btn.addEventListener('click', () => activateTab(btn.dataset.section));
     });
+
+    // --- Mobile dropdowns (mirror each .section-tabs group) ---
+    function tabLabel(btn) {
+      const badge = btn.querySelector('.tab-badge');
+      const text = btn.firstChild ? btn.firstChild.textContent.trim() : btn.textContent.trim();
+      const n = badge ? parseInt(badge.textContent, 10) : 0;
+      return n > 0 ? `${text} (${n})` : text;
+    }
+    document.querySelectorAll('.section-tabs').forEach(tabs => {
+      const select = document.createElement('select');
+      select.className = 'section-dropdown';
+      tabs.querySelectorAll('.section-tab').forEach(btn => {
+        const opt = document.createElement('option');
+        opt.value = btn.dataset.section;
+        opt.textContent = tabLabel(btn);
+        if (btn.classList.contains('active')) opt.selected = true;
+        select.appendChild(opt);
+      });
+      select.addEventListener('change', () => activateTab(select.value));
+      tabs.parentNode.insertBefore(select, tabs.nextSibling);
+    });
+    function syncDropdowns() {
+      document.querySelectorAll('.section-dropdown').forEach(select => {
+        select.querySelectorAll('option').forEach(opt => {
+          const btn = document.querySelector(`.section-tab[data-section="${opt.value}"]`);
+          if (btn) opt.textContent = tabLabel(btn);
+        });
+      });
+    }
 
     // --- Interactive CSS 3D Globe ---
     const CITIES = [
@@ -673,12 +778,6 @@
       const colorMap = {};
       people.forEach((p, i) => colorMap[p] = OOO_COLORS[i % OOO_COLORS.length]);
 
-      // Date header labels (every 7 days)
-      let dateLabels = '';
-      for (let d = 0; d <= totalDays; d += 7) {
-        const dt = new Date(timelineStart.getTime() + d * dayMs);
-        dateLabels += `<span>${dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>`;
-      }
 
       // Today marker position
       const todayPct = ((now - timelineStart) / dayMs / totalDays * 100);
@@ -721,7 +820,14 @@
         rows += `<div class="ooo-timeline-row"><span class="ooo-tl-name">${name}</span><div class="ooo-tl-track">${bars}<div class="ooo-tl-today" style="left:${todayPct.toFixed(2)}%"></div></div></div>`;
       });
 
-      c.innerHTML = `<div class="ooo-timeline"><div class="ooo-timeline-dates">${dateLabels}</div>${rows}</div>`;
+      // Date labels (every 7 days), aligned above the timeline track only
+      let dateLabels = '';
+      for (let d = 0; d <= totalDays; d += 7) {
+        const dt = new Date(timelineStart.getTime() + d * dayMs);
+        dateLabels += `<span>${dt.toLocaleDateString('en-US',{month:'short',day:'numeric'})}</span>`;
+      }
+      const header = `<div class="ooo-timeline-header"><span class="ooo-tl-name"></span><div class="ooo-timeline-dates">${dateLabels}</div></div>`;
+      c.innerHTML = `<div class="ooo-timeline">${header}${rows}</div>`;
     }
 
     function renderReleaseItem(r, now) {
@@ -790,6 +896,81 @@
         const clickStyle = gmailLink ? ' style="cursor:pointer" onclick="window.open(\'' + gmailLink + '\', \'_blank\')"' : '';
         return `<div class="email-item unread"${clickStyle}><div class="email-dot"></div><div class="email-info"><div class="email-subject">${m.subject||'(no subject)'}</div><div class="email-from">${parseFrom(m.from)}</div><div class="email-snippet">${m.snippet||''}</div></div><div class="email-date">${formatEmailDate(m.date)}</div></div>`;
       }).join('');
+    }
+
+    // --- Daily Summary (ClickUp doc, page-per-day) ---
+    function escapeHtml(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    function renderInlineMd(s) {
+      // Escape first, then re-introduce safe inline markdown
+      let out = escapeHtml(s);
+      // Links [text](url)
+      out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (m, t, u) => `<a href="${u}" target="_blank" rel="noopener">${t}</a>`);
+      // Bold **text**
+      out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+      // Italic _text_ or *text*
+      out = out.replace(/(^|[\s(])_([^_]+)_(?=[\s).,!?;:]|$)/g, '$1<em>$2</em>');
+      out = out.replace(/(^|[\s(])\*([^*]+)\*(?=[\s).,!?;:]|$)/g, '$1<em>$2</em>');
+      // Inline code `text`
+      out = out.replace(/`([^`]+)`/g, '<code>$1</code>');
+      // Backslash-escaped chars from ClickUp (e.g. "1\." → "1.")
+      out = out.replace(/\\([.\-_*])/g, '$1');
+      return out;
+    }
+    function renderMarkdown(md) {
+      const lines = (md || '').split(/\r?\n/);
+      const out = [];
+      let listType = null;            // 'ul' | 'ol' | null
+      let inBlockquote = false;
+      const closeList = () => { if (listType) { out.push(`</${listType}>`); listType = null; } };
+      const closeBq = () => { if (inBlockquote) { out.push('</blockquote>'); inBlockquote = false; } };
+      for (let raw of lines) {
+        const line = raw.replace(/\s+$/, '');
+        if (!line.trim()) { closeList(); closeBq(); continue; }
+        // Horizontal rule
+        if (/^(\* \* \*|---+|\*\*\*+|___+)$/.test(line.trim())) { closeList(); closeBq(); out.push('<hr>'); continue; }
+        // Headings
+        const h = line.match(/^(#{1,6})\s+(.*)$/);
+        if (h) { closeList(); closeBq(); const lvl = h[1].length; out.push(`<h${lvl}>${renderInlineMd(h[2])}</h${lvl}>`); continue; }
+        // Blockquote
+        if (/^>\s?/.test(line)) {
+          closeList();
+          if (!inBlockquote) { out.push('<blockquote>'); inBlockquote = true; }
+          out.push(`<p>${renderInlineMd(line.replace(/^>\s?/, ''))}</p>`);
+          continue;
+        } else { closeBq(); }
+        // Ordered list item
+        const ol = line.match(/^\s*\d+\.\s+(.*)$/);
+        if (ol) {
+          if (listType !== 'ol') { closeList(); out.push('<ol>'); listType = 'ol'; }
+          out.push(`<li>${renderInlineMd(ol[1])}</li>`);
+          continue;
+        }
+        // Unordered list item
+        const ul = line.match(/^\s*[-*+]\s+(.*)$/);
+        if (ul) {
+          if (listType !== 'ul') { closeList(); out.push('<ul>'); listType = 'ul'; }
+          out.push(`<li>${renderInlineMd(ul[1])}</li>`);
+          continue;
+        }
+        // Paragraph
+        closeList();
+        out.push(`<p>${renderInlineMd(line)}</p>`);
+      }
+      closeList(); closeBq();
+      return out.join('');
+    }
+    async function refreshDailySummary() {
+      const data = await fetchJSON('/api/clickup/daily-summary');
+      const c = document.getElementById('daily-summary-tab');
+      if (data.error) { c.innerHTML = `<div class="error-msg">&#9888; ${data.error}</div>`; return; }
+      if (data.notFound) {
+        const list = (data.availablePages || []).slice(0, 8).map(n => `<li>${escapeHtml(n)}</li>`).join('');
+        c.innerHTML = `<div class="card-body empty">No daily summary for ${data.date}.<br><br>Available pages:<ul style="text-align:left;font-size:12px;margin-top:6px">${list}</ul></div>`;
+        return;
+      }
+      const updated = data.dateUpdated ? new Date(parseInt(data.dateUpdated)).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '';
+      const linkBit = data.url ? `<a href="${data.url}" target="_blank" rel="noopener">Open in ClickUp ↗</a>` : '';
+      c.innerHTML = `<div class="daily-summary"><div class="daily-summary-meta"><span>${updated ? 'Updated ' + updated : ''}</span>${linkBit}</div>${renderMarkdown(data.content)}</div>`;
     }
 
     async function refreshClickUpTasks() {
@@ -879,9 +1060,10 @@
     async function refreshAll() {
       await Promise.all([
         refreshCalendar(), refreshMeetingNotes(), refreshTeamOOO(), refreshReleases(),
-        refreshClickUpTasks(), refreshSlackSaved(),
+        refreshDailySummary(), refreshClickUpTasks(), refreshSlackSaved(),
         refreshSlack(), refreshEmail(), refreshFollowups(),
       ]);
+      syncDropdowns();
       document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
     }
     refreshAll();
