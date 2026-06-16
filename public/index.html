@@ -268,6 +268,7 @@
     .invite-btn.decline { background: rgba(255, 59, 48, 0.12); color: #d70015; }
     .invite-btn.decline:hover { background: rgba(255, 59, 48, 0.25); }
     .invite-btn:disabled { opacity: 0.4; cursor: default; }
+    .invite-series-badge { display: inline-block; font-size: 9px; font-weight: 600; padding: 1px 6px; border-radius: 999px; background: rgba(201, 100, 66, 0.14); color: #C96442; vertical-align: middle; margin-left: 4px; }
     .release-item { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid rgba(80, 50, 30, 0.06); min-width: 0; }
     .release-item:last-child { border-bottom: none; }
     .release-date { font-size: 11px; font-weight: 600; color: #C96442; min-width: 70px; flex-shrink: 0; }
@@ -733,11 +734,30 @@
       const inviteCount = data.pendingInvites?.length||0;
       document.getElementById('invites-tab-badge').textContent = inviteCount;
       if (!inviteCount) ic.innerHTML = '<div class="card-body empty">No pending invites</div>';
-      else ic.innerHTML = data.pendingInvites.map(e => {
-        const ms = new Date(e.start)-new Date(), h=ms/36e5, d=Math.ceil(ms/864e5);
-        const cd = ms<=0?'Today':h<24?`in ${Math.floor(h)}h`:d===1?'Tomorrow':`in ${d}d`;
-        return `<div class="invite-item" id="invite-${e.id}"><div class="invite-info"><a class="invite-name" href="${e.htmlLink}" target="_blank">${e.summary||'No title'}</a><div class="invite-meta">${formatTime(e.start)} · ${cd} · From: ${e.organizer||'Unknown'}</div></div><div class="invite-actions"><button class="invite-btn accept" onclick="respondInvite('${e.id}','accepted',this)">Yes</button><button class="invite-btn tentative" onclick="respondInvite('${e.id}','tentative',this)">Maybe</button><button class="invite-btn decline" onclick="respondInvite('${e.id}','declined',this)">No</button></div></div>`;
-      }).join('');
+      else {
+        const cdOf = s => { const ms=new Date(s)-new Date(),h=ms/36e5,d=Math.ceil(ms/864e5); return ms<=0?'Today':h<24?`in ${Math.floor(h)}h`:d===1?'Tomorrow':`in ${d}d`; };
+        // Group recurring instances by their series (recurringEventId); singletons stand alone
+        const series = new Map();
+        const singles = [];
+        data.pendingInvites.forEach(e => {
+          if (e.recurringEventId) {
+            if (!series.has(e.recurringEventId)) series.set(e.recurringEventId, []);
+            series.get(e.recurringEventId).push(e);
+          } else singles.push(e);
+        });
+        let html = '';
+        // Recurring series — one row, buttons act on the whole series
+        for (const [recId, list] of series) {
+          list.sort((a,b) => new Date(a.start) - new Date(b.start));
+          const e = list[0];
+          html += `<div class="invite-item" id="invite-${recId}"><div class="invite-info"><a class="invite-name" href="${e.htmlLink}" target="_blank">${e.summary||'No title'}<span class="invite-series-badge">series · ${list.length}</span></a><div class="invite-meta">next ${formatTime(e.start)} · ${cdOf(e.start)} · From: ${e.organizer||'Unknown'}</div></div><div class="invite-actions"><button class="invite-btn accept" onclick="respondInvite('${recId}','accepted',this)">Yes all</button><button class="invite-btn tentative" onclick="respondInvite('${recId}','tentative',this)">Maybe</button><button class="invite-btn decline" onclick="respondInvite('${recId}','declined',this)">No all</button></div></div>`;
+        }
+        // Single (non-recurring) invites
+        html += singles.map(e => {
+          return `<div class="invite-item" id="invite-${e.id}"><div class="invite-info"><a class="invite-name" href="${e.htmlLink}" target="_blank">${e.summary||'No title'}</a><div class="invite-meta">${formatTime(e.start)} · ${cdOf(e.start)} · From: ${e.organizer||'Unknown'}</div></div><div class="invite-actions"><button class="invite-btn accept" onclick="respondInvite('${e.id}','accepted',this)">Yes</button><button class="invite-btn tentative" onclick="respondInvite('${e.id}','tentative',this)">Maybe</button><button class="invite-btn decline" onclick="respondInvite('${e.id}','declined',this)">No</button></div></div>`;
+        }).join('');
+        ic.innerHTML = html;
+      }
     }
 
     async function refreshMeetingNotes() {

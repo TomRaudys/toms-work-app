@@ -6,8 +6,8 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Load env vars
-require('dotenv').config();
+// Load env vars (absolute path so cwd-independent when launched by launchd)
+require('dotenv').config({ path: path.join(__dirname, '.env') });
 
 app.use(express.static(path.join(__dirname, 'public')));
 // --- ClickUp ---
@@ -455,6 +455,7 @@ app.get('/api/calendar/today', async (req, res) => {
       end: e.end?.dateTime || e.end?.date,
       organizer: e.organizer?.displayName || e.organizer?.email,
       htmlLink: e.htmlLink,
+      recurringEventId: e.recurringEventId || null,
     }));
 
     // Meeting stats: count and total time for accepted non-special events
